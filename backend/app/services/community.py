@@ -12,8 +12,8 @@ class CommunitySignal:
 
 def get_user_vote_weight(user_fingerprint: str) -> float:
     # Beginner-friendly baseline. Replace with trust reputation logic later.
-    if user_fingerprint.startswith("trusted_"):
-        return 1.5
+    #if user_fingerprint.startswith("trusted_"):
+     #   return 1.5
     return 1.0
 
 
@@ -21,7 +21,7 @@ def get_community_signal(content_id: str) -> CommunitySignal:
     votes = store.get_votes_for_content(content_id)
     if not votes:
         return CommunitySignal(
-            score=0.5,
+            score=0,
             message="No community votes yet.",
             strength="low",
         )
