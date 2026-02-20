@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
+import {Image, StyleSheet, Text, View} from "react-native";
 import { colors } from "../constants/theme";
 import { ScanResponse } from "../types/api";
 import { confidenceLabel, verdictColor, verdictLabel } from "../utils/verdict";
@@ -10,7 +10,9 @@ type Props = {
 export function ScanResultCard({ result }: Props) {
   return (
     <View style={styles.card}>
-      <Text style={[styles.verdict, { color: verdictColor(result.verdict) }]}>
+        <Image source={{uri: `https://img.youtube.com/vi/${result.canonicalId}/default.jpg`}}
+               style={{width: 256, height: 144}} />
+        <Text style={[styles.verdict, { color: verdictColor(result.verdict) }]}>
         {verdictLabel(result.verdict)}
       </Text>
       <Text style={styles.score}>Final Score: {(result.finalScore * 100).toFixed(1)}%</Text>
