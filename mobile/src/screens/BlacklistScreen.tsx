@@ -15,8 +15,10 @@ export function BlacklistScreen() {
         }
     });
     useEffect(() => {
+        console.log("TEST");
+        console.log(userFingerprint);
         if (userFingerprint) {
-            listMutation.mutate({ userFingerprint });
+            listMutation.mutate({ userFingerprint: userFingerprint });
         }
     }, [userFingerprint]);
     //const historyQuery = useQuery({
