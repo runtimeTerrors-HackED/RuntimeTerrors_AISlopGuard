@@ -53,12 +53,9 @@ class UpdateListRequest(BaseModel):
     userFingerprint: str
     listType: ListType
 
-class GetListRequest(BaseModel):
-    userFingerprint: str
-
-class GetListResponse(BaseModel):
-    channelID: str
-    blockType: str
+class CreatorListEntry(BaseModel):
+    creatorId: str
+    listType: ListType
 
 class UpdateListResponse(BaseModel):
     ok: bool

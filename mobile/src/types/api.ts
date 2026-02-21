@@ -48,3 +48,8 @@ export type UpdateListRequest = {
 export type UpdateListResponse = {
   ok: boolean;
 };
+
+export type CreatorListEntry = {
+  creatorId: string;
+  listType: "allow" | "block";
+};
