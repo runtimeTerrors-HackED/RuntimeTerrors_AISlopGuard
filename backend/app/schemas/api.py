@@ -53,6 +53,8 @@ class UpdateListRequest(BaseModel):
     userFingerprint: str
     listType: ListType
 
+class GetListRequest(BaseModel):
+    userFingerprint: str
 
 class UpdateListResponse(BaseModel):
     ok: bool

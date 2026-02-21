@@ -34,6 +34,9 @@ class MemoryStore:
     def set_creator_list(self, user_fingerprint: str, creator_id: str, list_type: ListType):
         self.user_lists[user_fingerprint][creator_id] = list_type
 
+    def get_creator_list(self, user_fingerprint: str):
+        return self.user_lists[user_fingerprint]
+
     def get_creator_list_value(self, user_fingerprint: str, creator_id: str) -> ListType | None:
         return self.user_lists[user_fingerprint].get(creator_id)
 

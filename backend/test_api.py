@@ -2,10 +2,8 @@ import requests
 import pprint
 
 paramas = {
-  "url": "https://www.tiktok.com/@longliveai/video/7559491915780001046",
-  "userFingerprint": "anon_123",
-  "conservativeMode": True
+  "userFingerprint": "anon_1771620259216_zrdsdsd2",
 }
 
-r = requests.post("http://localhost:8000/api/scan", json=paramas)
+r = requests.get("http://localhost:8000/api/list", json=paramas)
 pprint.pprint(r.json())
