@@ -45,6 +45,15 @@ export type UpdateListRequest = {
   listType: "allow" | "block";
 };
 
+export type GetListRequest = {
+    userFingerprint: string;
+};
+
+export type GetListResponse = {
+    channelID: string;
+    blockType: string;
+};
+
 export type UpdateListResponse = {
   ok: boolean;
 };

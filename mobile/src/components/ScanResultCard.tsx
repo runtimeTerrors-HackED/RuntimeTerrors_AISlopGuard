@@ -8,25 +8,49 @@ type Props = {
 };
 
 export function ScanResultCard({ result }: Props) {
-  return (
-    <View style={styles.card}>
-        <Image source={{uri: `https://img.youtube.com/vi/${result.canonicalId}/default.jpg`}}
-               style={{width: 256, height: 144}} />
-        <Text style={[styles.verdict, { color: verdictColor(result.verdict) }]}>
-        {verdictLabel(result.verdict)}
-      </Text>
-      <Text style={styles.score}>Final Score: {(result.finalScore * 100).toFixed(1)}%</Text>
-      <Text style={styles.meta}>
-        Confidence: {confidenceLabel(result.confidenceBand)} | Platform: {result.platform}
-      </Text>
-      <Text style={styles.sectionTitle}>Why this result</Text>
-      {result.evidence.map((evidence, idx) => (
-        <Text style={styles.reason} key={`${evidence.source}-${idx}`}>
-          - [{evidence.source}] {evidence.message} ({evidence.strength})
-        </Text>
-      ))}
-    </View>
-  );
+    if (result.contentId.startsWith("youtube"))
+    {
+        return (
+            <View style={styles.card}>
+                <Image source={{uri: `https://img.youtube.com/vi/${result.canonicalId}/default.jpg`}}
+                       style={{width: 256, height: 144}} />
+                <Text style={[styles.verdict, { color: verdictColor(result.verdict) }]}>
+                    {verdictLabel(result.verdict)}
+                </Text>
+                <Text style={styles.score}>Final Score: {(result.finalScore * 100).toFixed(1)}%</Text>
+                <Text style={styles.meta}>
+                    Confidence: {confidenceLabel(result.confidenceBand)} | Platform: {result.platform}
+                </Text>
+                <Text style={styles.sectionTitle}>Why this result</Text>
+                {result.evidence.map((evidence, idx) => (
+                    <Text style={styles.reason} key={`${evidence.source}-${idx}`}>
+                        - [{evidence.source}] {evidence.message} ({evidence.strength})
+                    </Text>
+                ))}
+            </View>
+        );
+    }
+    else
+    {
+        return (
+            <View style={styles.card}>
+                <Text style={[styles.verdict, { color: verdictColor(result.verdict) }]}>
+                    {verdictLabel(result.verdict)}
+                </Text>
+                <Text style={styles.score}>Final Score: {(result.finalScore * 100).toFixed(1)}%</Text>
+                <Text style={styles.meta}>
+                    Confidence: {confidenceLabel(result.confidenceBand)} | Platform: {result.platform}
+                </Text>
+                <Text style={styles.sectionTitle}>Why this result</Text>
+                {result.evidence.map((evidence, idx) => (
+                    <Text style={styles.reason} key={`${evidence.source}-${idx}`}>
+                        - [{evidence.source}] {evidence.message} ({evidence.strength})
+                    </Text>
+                ))}
+            </View>
+        );
+    }
+
 }
 
 const styles = StyleSheet.create({

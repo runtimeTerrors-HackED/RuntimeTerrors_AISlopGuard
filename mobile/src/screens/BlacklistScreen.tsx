@@ -1,44 +1,30 @@
-import { useQuery } from "@tanstack/react-query";
+import {useMutation, useQuery} from "@tanstack/react-query";
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
-import { fetchHistory } from "../api/scan";
+import {fetchHistory, getCreatorList, scanContent} from "../api/scan";
 import { ScanResultCard } from "../components/ScanResultCard";
 import { colors } from "../constants/theme";
 import { useAppStore } from "../store/appStore";
+import {useEffect} from "react";
 
-export function HistoryScreen() {
-  const userFingerprint = useAppStore((state) => state.userFingerprint);
-
-  const historyQuery = useQuery({
-    queryKey: ["history", userFingerprint],
-    queryFn: () => fetchHistory(userFingerprint),
-  });
-
+export function BlacklistScreen() {
+    const userFingerprint = useAppStore((state) => state.userFingerprint);
+    const listMutation = useMutation({
+        mutationFn: getCreatorList,
+        onSuccess: (data) => {
+            console.log(data);
+        }
+    });
+    useEffect(() => {
+        if (userFingerprint) {
+            listMutation.mutate({ userFingerprint });
+        }
+    }, [userFingerprint]);
+    //const historyQuery = useQuery({
+    //queryKey: ["history", userFingerprint],
+    //queryFn: () => getCreatorList(userFingerprint),
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl refreshing={historyQuery.isRefetching} onRefresh={historyQuery.refetch} />
-      }
-    >
-      {historyQuery.isLoading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator color={colors.primary} />
-          <Text style={styles.loadingText}>Loading history...</Text>
-        </View>
-      ) : null}
-
-      {historyQuery.isError ? (
-        <Text style={styles.error}>Could not load history: {(historyQuery.error as Error).message}</Text>
-      ) : null}
-
-      {!historyQuery.isLoading && historyQuery.data?.length === 0 ? (
-        <Text style={styles.empty}>No scans yet. Scan something from the home screen first.</Text>
-      ) : null}
-
-      {historyQuery.data?.map((item) => (
-        <ScanResultCard key={item.contentId} result={item} />
-      ))}
+    <ScrollView>
+        <Text style={styles.loadingText}>Loading history...</Text>
     </ScrollView>
   );
 }

@@ -1,11 +1,12 @@
 import { apiRequest } from "./client";
 import {
-  ScanRequest,
-  ScanResponse,
-  UpdateListRequest,
-  UpdateListResponse,
-  VoteRequest,
-  VoteResponse,
+    GetListRequest, GetListResponse,
+    ScanRequest,
+    ScanResponse,
+    UpdateListRequest,
+    UpdateListResponse,
+    VoteRequest,
+    VoteResponse,
 } from "../types/api";
 
 export function scanContent(payload: ScanRequest) {
@@ -27,6 +28,13 @@ export function updateCreatorList(payload: UpdateListRequest) {
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export function getCreatorList(payload: GetListRequest) {
+    return apiRequest<GetListResponse>("/api/list", {
+        method: "GET",
+        body: JSON.stringify(payload),
+    });
 }
 
 export function fetchHistory(userFingerprint: string) {
