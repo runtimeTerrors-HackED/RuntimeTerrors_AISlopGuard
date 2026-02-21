@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from app.db.memory_store import store
+from app.db.supabase import store
 
 
 @dataclass

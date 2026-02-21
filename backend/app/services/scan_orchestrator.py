@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from app.db.memory_store import store
+from app.db.supabase import store
 from app.schemas.api import EvidenceItem, ScanResponse
 from app.services.community import get_community_signal
 from app.services.model_client import get_model_signal

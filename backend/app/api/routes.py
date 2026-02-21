@@ -2,7 +2,7 @@ from typing import Literal
 
 from fastapi import APIRouter, Query
 
-from app.db.memory_store import store
+from app.db.supabase import store
 from app.schemas.api import (
     ScanRequest,
     ScanResponse,
