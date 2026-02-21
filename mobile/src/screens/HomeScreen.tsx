@@ -2,6 +2,8 @@ import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   StyleSheet,
   Switch,
@@ -11,7 +13,8 @@ import {
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { scanContent } from "../api/scan";
-import { colors } from "../constants/theme";
+import { useTheme } from "../hooks/useTheme";
+import { ThemeColors } from "../constants/theme";
 import { useAppStore } from "../store/appStore";
 import { RootStackParamList } from "../navigation/types";
 
@@ -19,6 +22,8 @@ type Props = NativeStackScreenProps<RootStackParamList, "Home">;
 
 export function HomeScreen({ navigation }: Props) {
   const [url, setUrl] = useState("");
+  const colors = useTheme();
+  const styles = makeStyles(colors);
   const userFingerprint = useAppStore((state) => state.userFingerprint);
   const conservativeMode = useAppStore((state) => state.conservativeMode);
   const setConservativeMode = useAppStore((state) => state.setConservativeMode);
@@ -28,127 +33,207 @@ export function HomeScreen({ navigation }: Props) {
     onSuccess: (result) => navigation.navigate("Result", { result }),
   });
 
+  const canScan = !!url.trim() && !scanMutation.isPending;
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Scan a Reel, Short, Image, or Video Link</Text>
-      <Text style={styles.subtitle}>
-        Paste a URL from YouTube, Instagram, TikTok, or a direct image/video link.
-      </Text>
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <View style={styles.container}>
 
-      <TextInput
-        value={url}
-        onChangeText={setUrl}
-        placeholder="https://youtube.com/shorts/..."
-        placeholderTextColor="#64748b"
-        style={styles.input}
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
+        {/* Brand */}
+        <View style={styles.brand}>
+          <View style={styles.logoMark}>
+            <View style={styles.logoInner} />
+          </View>
+          <Text style={styles.appName}>SlopGuard</Text>
+          <Text style={styles.tagline}>
+            Detect AI-generated videos and images{"\n"}from any social media link.
+          </Text>
+        </View>
 
-      <View style={styles.switchRow}>
-        <Text style={styles.switchLabel}>Conservative mode (fewer false positives)</Text>
-        <Switch
-          value={conservativeMode}
-          onValueChange={setConservativeMode}
-          thumbColor={conservativeMode ? colors.primary : "#94a3b8"}
-        />
+        {/* Form */}
+        <View style={styles.form}>
+          <TextInput
+            value={url}
+            onChangeText={setUrl}
+            placeholder="Paste a YouTube, Instagram or TikTok link..."
+            placeholderTextColor={colors.placeholder}
+            style={styles.input}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="url"
+            multiline={false}
+          />
+
+          <View style={styles.switchRow}>
+            <View>
+              <Text style={styles.switchLabel}>Conservative mode</Text>
+              <Text style={styles.switchCaption}>Fewer false positives</Text>
+            </View>
+            <Switch
+              value={conservativeMode}
+              onValueChange={setConservativeMode}
+              thumbColor="#fff"
+              trackColor={{ false: colors.panelBorder, true: colors.primary }}
+            />
+          </View>
+
+          {scanMutation.isError ? (
+            <Text style={styles.errorText}>
+              {(scanMutation.error as Error).message}
+            </Text>
+          ) : null}
+        </View>
+
+        {/* Actions */}
+        <View style={styles.actions}>
+          <Pressable
+            style={[styles.scanButton, !canScan && styles.scanButtonDisabled]}
+            onPress={() =>
+              scanMutation.mutate({ url, userFingerprint, conservativeMode })
+            }
+            disabled={!canScan}
+          >
+            {scanMutation.isPending ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={styles.scanButtonText}>Scan Content</Text>
+            )}
+          </Pressable>
+
+          <Pressable
+            style={styles.historyButton}
+            onPress={() => navigation.navigate("History")}
+          >
+            <Text style={styles.historyButtonText}>View Scan History</Text>
+          </Pressable>
+        </View>
+
       </View>
-
-      <Pressable
-        style={[styles.button, scanMutation.isPending && styles.buttonDisabled]}
-        onPress={() => scanMutation.mutate({ url, userFingerprint, conservativeMode })}
-        disabled={scanMutation.isPending || !url.trim()}
-      >
-        {scanMutation.isPending ? (
-          <ActivityIndicator color="#0f172a" />
-        ) : (
-          <Text style={styles.buttonText}>Scan Content</Text>
-        )}
-      </Pressable>
-
-      {scanMutation.isError ? (
-        <Text style={styles.errorText}>
-          Scan failed: {(scanMutation.error as Error).message}
-        </Text>
-      ) : null}
-
-      <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate("History")}>
-        <Text style={styles.secondaryButtonText}>Open History</Text>
-      </Pressable>
-
-      <Text style={styles.footer}>User ID: {userFingerprint}</Text>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: colors.bg,
-    gap: 12,
-  },
-  title: {
-    color: colors.text,
-    fontSize: 22,
-    fontWeight: "700",
-  },
-  subtitle: {
-    color: colors.subtext,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  input: {
-    borderColor: "#334155",
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    color: colors.text,
-    backgroundColor: "#0b1220",
-  },
-  switchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  switchLabel: {
-    color: colors.text,
-    fontSize: 14,
-    flex: 1,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: "#0f172a",
-    fontWeight: "700",
-    fontSize: 16,
-  },
-  secondaryButton: {
-    borderColor: "#334155",
-    borderWidth: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  secondaryButtonText: {
-    color: colors.text,
-    fontWeight: "600",
-  },
-  errorText: {
-    color: colors.danger,
-  },
-  footer: {
-    marginTop: "auto",
-    color: "#64748b",
-    fontSize: 12,
-  },
-});
+function makeStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    container: {
+      flex: 1,
+      paddingHorizontal: 24,
+      paddingTop: 32,
+      paddingBottom: 36,
+      gap: 28,
+    },
+    brand: {
+      gap: 10,
+      paddingBottom: 4,
+    },
+    logoMark: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      backgroundColor: colors.primaryDim,
+      borderWidth: 1,
+      borderColor: colors.primary + "40",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 4,
+    },
+    logoInner: {
+      width: 18,
+      height: 18,
+      borderRadius: 5,
+      backgroundColor: colors.primary,
+      opacity: 0.9,
+    },
+    appName: {
+      color: colors.text,
+      fontSize: 34,
+      fontWeight: "700",
+      letterSpacing: -0.8,
+    },
+    tagline: {
+      color: colors.subtext,
+      fontSize: 15,
+      lineHeight: 22,
+    },
+    form: {
+      gap: 12,
+    },
+    input: {
+      backgroundColor: colors.panel,
+      borderWidth: 1,
+      borderColor: colors.panelBorder,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 15,
+      color: colors.text,
+      fontSize: 15,
+    },
+    switchRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 4,
+      paddingVertical: 4,
+    },
+    switchLabel: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: "500",
+    },
+    switchCaption: {
+      color: colors.subtext,
+      fontSize: 12,
+      marginTop: 2,
+    },
+    errorText: {
+      color: colors.danger,
+      fontSize: 13,
+      paddingHorizontal: 2,
+    },
+    actions: {
+      gap: 10,
+      marginTop: "auto",
+    },
+    scanButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: 16,
+      borderRadius: 12,
+      alignItems: "center",
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.3,
+      shadowRadius: 14,
+      elevation: 5,
+    },
+    scanButtonDisabled: {
+      opacity: 0.35,
+      shadowOpacity: 0,
+    },
+    scanButtonText: {
+      color: "#fff",
+      fontWeight: "600",
+      fontSize: 15,
+      letterSpacing: 0.1,
+    },
+    historyButton: {
+      backgroundColor: colors.panel,
+      borderWidth: 1,
+      borderColor: colors.panelBorder,
+      paddingVertical: 14,
+      borderRadius: 12,
+      alignItems: "center",
+    },
+    historyButtonText: {
+      color: colors.subtext,
+      fontWeight: "500",
+      fontSize: 14,
+    },
+  });
+}

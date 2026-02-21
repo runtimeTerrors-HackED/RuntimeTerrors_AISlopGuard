@@ -3,7 +3,8 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-nati
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { submitVote, updateCreatorList } from "../api/scan";
 import { ScanResultCard } from "../components/ScanResultCard";
-import { colors } from "../constants/theme";
+import { useTheme } from "../hooks/useTheme";
+import { ThemeColors } from "../constants/theme";
 import { RootStackParamList } from "../navigation/types";
 import { useAppStore } from "../store/appStore";
 
@@ -11,6 +12,8 @@ type Props = NativeStackScreenProps<RootStackParamList, "Result">;
 
 export function ResultScreen({ route }: Props) {
   const { result } = route.params;
+  const colors = useTheme();
+  const styles = makeStyles(colors);
   const userFingerprint = useAppStore((state) => state.userFingerprint);
 
   const voteMutation = useMutation({
@@ -28,15 +31,11 @@ export function ResultScreen({ route }: Props) {
       <ScanResultCard result={result} />
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <Text style={styles.sectionLabel}>Creator</Text>
         <Pressable
           style={styles.actionButton}
           onPress={() =>
-            listMutation.mutate({
-              creatorId: result.creatorId,
-              userFingerprint,
-              listType: "allow",
-            })
+            listMutation.mutate({ creatorId: result.creatorId, userFingerprint, listType: "allow" })
           }
         >
           <Text style={styles.actionText}>Always Allow This Creator</Text>
@@ -44,11 +43,7 @@ export function ResultScreen({ route }: Props) {
         <Pressable
           style={[styles.actionButton, styles.dangerButton]}
           onPress={() =>
-            listMutation.mutate({
-              creatorId: result.creatorId,
-              userFingerprint,
-              listType: "block",
-            })
+            listMutation.mutate({ creatorId: result.creatorId, userFingerprint, listType: "block" })
           }
         >
           <Text style={[styles.actionText, styles.dangerText]}>Always Block This Creator</Text>
@@ -56,86 +51,98 @@ export function ResultScreen({ route }: Props) {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Improve the model</Text>
-        <Pressable
-          style={styles.actionButton}
-          onPress={() =>
-            voteMutation.mutate({
-              contentId: result.contentId,
-              userFingerprint,
-              vote: "ai",
-            })
-          }
-        >
-          <Text style={styles.actionText}>Mark as AI-generated</Text>
-        </Pressable>
-        <Pressable
-          style={styles.actionButton}
-          onPress={() =>
-            voteMutation.mutate({
-              contentId: result.contentId,
-              userFingerprint,
-              vote: "not_ai",
-            })
-          }
-        >
-          <Text style={styles.actionText}>Mark as Not AI-generated</Text>
-        </Pressable>
-        <Pressable
-          style={styles.actionButton}
-          onPress={() =>
-            voteMutation.mutate({
-              contentId: result.contentId,
-              userFingerprint,
-              vote: "unsure",
-            })
-          }
-        >
-          <Text style={styles.actionText}>Mark as Unsure</Text>
-        </Pressable>
+        <Text style={styles.sectionLabel}>Improve the model</Text>
+        <View style={styles.voteRow}>
+          <Pressable
+            style={[styles.voteButton, { backgroundColor: colors.dangerDim, borderColor: colors.danger + "35" }]}
+            onPress={() =>
+              voteMutation.mutate({ contentId: result.contentId, userFingerprint, vote: "ai" })
+            }
+          >
+            <Text style={[styles.voteText, { color: colors.danger }]}>AI</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.voteButton, { backgroundColor: colors.successDim, borderColor: colors.success + "35" }]}
+            onPress={() =>
+              voteMutation.mutate({ contentId: result.contentId, userFingerprint, vote: "not_ai" })
+            }
+          >
+            <Text style={[styles.voteText, { color: colors.success }]}>Human</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.voteButton, { borderColor: colors.panelBorder }]}
+            onPress={() =>
+              voteMutation.mutate({ contentId: result.contentId, userFingerprint, vote: "unsure" })
+            }
+          >
+            <Text style={[styles.voteText, { color: colors.subtext }]}>Unsure</Text>
+          </Pressable>
+        </View>
       </View>
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  content: {
-    padding: 16,
-    gap: 16,
-  },
-  section: {
-    backgroundColor: colors.panel,
-    borderColor: "#1e293b",
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 14,
-    gap: 10,
-  },
-  sectionTitle: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  actionButton: {
-    borderColor: "#334155",
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-  },
-  dangerButton: {
-    borderColor: "#7f1d1d",
-    backgroundColor: "#1f1010",
-  },
-  actionText: {
-    color: colors.text,
-    fontWeight: "600",
-  },
-  dangerText: {
-    color: "#fca5a5",
-  },
-});
+function makeStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    content: {
+      padding: 24,
+      gap: 14,
+      paddingBottom: 48,
+    },
+    section: {
+      backgroundColor: colors.panel,
+      borderWidth: 1,
+      borderColor: colors.panelBorder,
+      borderRadius: 16,
+      padding: 16,
+      gap: 10,
+    },
+    sectionLabel: {
+      color: colors.subtext,
+      fontSize: 11,
+      fontWeight: "600",
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+      marginBottom: 2,
+    },
+    actionButton: {
+      borderColor: colors.panelBorder,
+      borderWidth: 1,
+      borderRadius: 10,
+      paddingVertical: 13,
+      paddingHorizontal: 14,
+    },
+    dangerButton: {
+      borderColor: colors.danger + "35",
+      backgroundColor: colors.dangerDim,
+    },
+    actionText: {
+      color: colors.text,
+      fontWeight: "500",
+      fontSize: 14,
+    },
+    dangerText: {
+      color: colors.danger,
+    },
+    voteRow: {
+      flexDirection: "row",
+      gap: 8,
+    },
+    voteButton: {
+      flex: 1,
+      borderWidth: 1,
+      borderRadius: 10,
+      paddingVertical: 13,
+      alignItems: "center",
+    },
+    voteText: {
+      fontSize: 13,
+      fontWeight: "600",
+    },
+  });
+}
