@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Literal
 
+from app.schemas.api import GetListResponse
 
 ListType = Literal["allow", "block"]
 VoteType = Literal["ai", "not_ai", "unsure"]
@@ -33,6 +34,13 @@ class MemoryStore:
 
     def set_creator_list(self, user_fingerprint: str, creator_id: str, list_type: ListType):
         self.user_lists[user_fingerprint][creator_id] = list_type
+
+    def get_creator_list(self, user_fingerprint: str):
+        _list = []
+        for l in self.user_lists[user_fingerprint]:
+            _list.append(GetListResponse(channelID=self.user_lists[user_fingerprint][l], blockType=l))
+        print(_list)
+        return _list
 
     def get_creator_list_value(self, user_fingerprint: str, creator_id: str) -> ListType | None:
         return self.user_lists[user_fingerprint].get(creator_id)
