@@ -2,8 +2,10 @@ import requests
 import pprint
 
 paramas = {
-  "userFingerprint": "anon_1771620259216_zrdsdsd2",
+  "url": "https://www.youtube.com/watch?v=OlNv7OY9thM",
+  "userFingerprint": "anon_123",
+  "conservativeMode": True
 }
 
-r = requests.get("http://localhost:8000/api/list", json=paramas)
+r = requests.post("http://localhost:8000/api/scan", json=paramas)
 pprint.pprint(r.json())
