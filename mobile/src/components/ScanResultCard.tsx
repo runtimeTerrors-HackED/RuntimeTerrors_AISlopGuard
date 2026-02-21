@@ -51,7 +51,7 @@ export function ScanResultCard({ result }: Props) {
 
   return (
     <View style={styles.card}>
-      {result.canonicalId ? (
+      {result.platform === "youtube" && result.canonicalId ? (
         <Image
           source={{ uri: `https://img.youtube.com/vi/${result.canonicalId}/hqdefault.jpg` }}
           style={[styles.thumbnail, { width: imgWidth, height: imgHeight }]}

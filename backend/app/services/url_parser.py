@@ -46,11 +46,27 @@ def parse_content(url: str) -> ParsedContent:
         video_id = _youtube_id(url) or sha1(url.encode("utf-8")).hexdigest()[:16]
         channelId = "undefined"
         if settings.youtube_api_key:
-            api_get = requests.get(f"https://www.googleapis.com/youtube/v3/videos?part=snippet&id={video_id}&key={settings.youtube_api_key}")
-            api_json = api_get.json()
-            for item in api_json['items']:
-                channelId = item['snippet']['channelId']
-                break
+            try:
+                api_get = requests.get(
+                    "https://www.googleapis.com/youtube/v3/videos",
+                    params={
+                        "part": "snippet",
+                        "id": video_id,
+                        "key": settings.youtube_api_key,
+                    },
+                    timeout=5,
+                )
+                api_get.raise_for_status()
+                api_json = api_get.json()
+                for item in api_json.get("items", []):
+                    snippet = item.get("snippet", {})
+                    candidate = snippet.get("channelId")
+                    if candidate:
+                        channelId = candidate
+                        break
+            except Exception:
+                # Keep parsing resilient even if YouTube API lookup fails.
+                channelId = "undefined"
         return ParsedContent(
             platform="youtube",
             canonical_id=video_id,
