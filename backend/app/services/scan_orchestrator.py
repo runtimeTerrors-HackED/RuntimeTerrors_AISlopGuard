@@ -104,7 +104,14 @@ def run_scan(url: str, user_fingerprint: str, conservative_mode: bool = True) ->
         community_score=community_signal.score,
         model_score=model_signal.score,
     )
-    verdict, confidence_band = decide_verdict(final_score, conservative_mode=conservative_mode)
+    platform_unavailable = platform_signal.score == 0.5 and platform_signal.strength == "low"
+    no_community_votes = not community_signal.has_votes
+    low_signal_mode = platform_unavailable and no_community_votes
+    verdict, confidence_band = decide_verdict(
+        final_score,
+        conservative_mode=conservative_mode,
+        low_signal_mode=low_signal_mode,
+    )
 
     response = ScanResponse(
         contentId=parsed.content_id,
