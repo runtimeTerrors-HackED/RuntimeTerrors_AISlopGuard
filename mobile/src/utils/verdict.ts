@@ -1,5 +1,5 @@
 import { ConfidenceBand, Verdict } from "../types/api";
-import { colors } from "../constants/theme";
+import { ThemeColors } from "../constants/theme";
 
 export function verdictLabel(verdict: Verdict) {
   if (verdict === "likely_ai") return "Likely AI-Generated";
@@ -7,7 +7,7 @@ export function verdictLabel(verdict: Verdict) {
   return "Unclear";
 }
 
-export function verdictColor(verdict: Verdict) {
+export function verdictColor(verdict: Verdict, colors: ThemeColors) {
   if (verdict === "likely_ai") return colors.danger;
   if (verdict === "likely_human") return colors.success;
   return colors.warning;
