@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 import math
@@ -11,6 +12,9 @@ import onnxruntime as ort
 import requests
 from PIL import Image
 from io import BytesIO
+import yt_dlp
+import json
+import glob
 
 
 MODEL_PATH = Path(__file__).parent / "artifacts" / "model.onnx"
@@ -118,20 +122,75 @@ def _extract_video_frame_scores(video_path: str, max_frames: int = 10) -> list[f
 
 def _download_video_to_temp_file(url: str, max_bytes: int = 40 * 1024 * 1024) -> str | None:
     try:
-        with requests.get(url, stream=True, timeout=12) as response:
-            response.raise_for_status()
+        if 'instagram' in url:
+            ydl_opts = {
+                # Best video + audio, preferring MP4
+                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4/best',
+
+                # Ensure final file is MP4
+                'merge_output_format': 'mp4',
+            }
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                error_code = ydl.download(url)
+            id = url.rsplit("?v=", 1)[-1]
+            video_file = glob.glob("*{}*.mp4".format(id))[0]
+            video_data = open(video_file, 'rb').read()
             with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file:
+                temp_file.write(video_data)
                 temp_path = temp_file.name
-                downloaded = 0
-                for chunk in response.iter_content(chunk_size=8192):
-                    if not chunk:
-                        continue
-                    downloaded += len(chunk)
-                    if downloaded > max_bytes:
-                        Path(temp_path).unlink(missing_ok=True)
-                        return None
-                    temp_file.write(chunk)
-                return temp_path
+            os.remove(video_file)
+            return temp_path
+        elif 'tiktok' in url:
+            ydl_opts = {
+                # Best video + audio, preferring MP4
+                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4/best',
+
+                # Ensure final file is MP4
+                'merge_output_format': 'mp4',
+            }
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                error_code = ydl.download(url)
+            id = url.rsplit("?v=", 1)[-1]
+            video_file = glob.glob("*{}*.mp4".format(id))[0]
+            video_data = open(video_file, 'rb').read()
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file:
+                temp_file.write(video_data)
+                temp_path = temp_file.name
+            os.remove(video_file)
+            return temp_path
+        elif 'youtube' not in url:
+            with requests.get(url, stream=True, timeout=12) as response:
+                response.raise_for_status()
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file:
+                    temp_path = temp_file.name
+                    downloaded = 0
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if not chunk:
+                            continue
+                        downloaded += len(chunk)
+                        if downloaded > max_bytes:
+                            Path(temp_path).unlink(missing_ok=True)
+                            return None
+                        temp_file.write(chunk)
+                    return temp_path
+        else:
+            ydl_opts = {
+                # Best video + audio, preferring MP4
+                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4/best',
+
+                # Ensure final file is MP4
+                'merge_output_format': 'mp4',
+            }
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                error_code = ydl.download(url)
+            id = url.rsplit("?v=", 1)[-1]
+            video_file = glob.glob("*{}*.mp4".format(id))[0]
+            video_data = open(video_file, 'rb').read()
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file:
+                temp_file.write(video_data)
+                temp_path = temp_file.name
+            os.remove(video_file)
+            return temp_path
     except Exception:
         return None
 

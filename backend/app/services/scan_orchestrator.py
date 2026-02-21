@@ -8,7 +8,6 @@ from app.services.platform_signals import get_platform_signal
 from app.services.scoring import calculate_final_score, decide_verdict
 from app.services.url_parser import parse_content
 
-
 def run_scan(url: str, user_fingerprint: str, conservative_mode: bool = True) -> ScanResponse:
     parsed = parse_content(url)
     user_list_value = store.get_creator_list_value(user_fingerprint, parsed.creator_id)
