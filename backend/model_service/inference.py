@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 from typing import Any
 import math
 import tempfile
@@ -119,80 +120,152 @@ def _extract_video_frame_scores(video_path: str, max_frames: int = 10) -> list[f
     capture.release()
     return scores
 
+def _url_platform(url: str) -> str:
+    host = urlparse(url).netloc.lower()
+    if "youtube.com" in host or "youtu.be" in host:
+        return "youtube"
+    if "instagram.com" in host:
+        return "instagram"
+    if "tiktok.com" in host:
+        return "tiktok"
+    return "other"
 
-def _download_video_to_temp_file(url: str, max_bytes: int = 40 * 1024 * 1024) -> str | None:
+def _download_with_ytdlp(url: str, max_bytes: int) -> str | None:
     try:
-        if 'instagram' in url:
+        with tempfile.TemporaryDirectory() as tmp_dir:
             ydl_opts = {
-                # Best video + audio, preferring MP4
-                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4/best',
-
-                # Ensure final file is MP4
-                'merge_output_format': 'mp4',
+                "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4/best",
+                "merge_output_format": "mp4",
+                "outtmpl": str(Path(tmp_dir) / "%(id)s.%(ext)s"),
+                "noplaylist": True,
+                "quiet": True,
+                "no_warnings": True,
             }
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                error_code = ydl.download(url)
-            id = url.rsplit("?v=", 1)[-1]
-            video_file = glob.glob("*{}*.mp4".format(id))[0]
-            video_data = open(video_file, 'rb').read()
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file:
-                temp_file.write(video_data)
-                temp_path = temp_file.name
-            os.remove(video_file)
-            return temp_path
-        elif 'tiktok' in url:
-            ydl_opts = {
-                # Best video + audio, preferring MP4
-                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4/best',
+                ydl.extract_info(url, download=True)
 
-                # Ensure final file is MP4
-                'merge_output_format': 'mp4',
-            }
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                error_code = ydl.download(url)
-            id = url.rsplit("?v=", 1)[-1]
-            video_file = glob.glob("*{}*.mp4".format(id))[0]
-            video_data = open(video_file, 'rb').read()
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file:
-                temp_file.write(video_data)
-                temp_path = temp_file.name
-            os.remove(video_file)
-            return temp_path
-        elif 'youtube' not in url:
-            with requests.get(url, stream=True, timeout=12) as response:
-                response.raise_for_status()
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file:
-                    temp_path = temp_file.name
-                    downloaded = 0
-                    for chunk in response.iter_content(chunk_size=8192):
-                        if not chunk:
-                            continue
-                        downloaded += len(chunk)
-                        if downloaded > max_bytes:
-                            Path(temp_path).unlink(missing_ok=True)
-                            return None
-                        temp_file.write(chunk)
-                    return temp_path
-        else:
-            ydl_opts = {
-                # Best video + audio, preferring MP4
-                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4/best',
+            mp4_files = list(Path(tmp_dir).glob("*.mp4"))
+            if not mp4_files:
+                return None
 
-                # Ensure final file is MP4
-                'merge_output_format': 'mp4',
-            }
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                error_code = ydl.download(url)
-            id = url.rsplit("?v=", 1)[-1]
-            video_file = glob.glob("*{}*.mp4".format(id))[0]
-            video_data = open(video_file, 'rb').read()
+            source = max(mp4_files, key=lambda p: p.stat().st_mtime)
+            data = source.read_bytes()
+            if len(data) > max_bytes:
+                return None
+
             with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file:
-                temp_file.write(video_data)
-                temp_path = temp_file.name
-            os.remove(video_file)
-            return temp_path
+                temp_file.write(data)
+                return temp_file.name
     except Exception:
         return None
+
+def _download_video_to_temp_file(url: str, max_bytes: int = 40 * 1024 * 1024) -> str | None:
+    platform = _url_platform(url)
+
+    # Use yt-dlp for social platforms (youtube, youtu.be, instagram, tiktok)
+    if platform in {"youtube", "instagram", "tiktok"}:
+        return _download_with_ytdlp(url, max_bytes=max_bytes)
+
+    # For direct media links only
+    try:
+        with requests.get(url, stream=True, timeout=12) as response:
+            response.raise_for_status()
+
+            content_type = (response.headers.get("content-type") or "").lower()
+            looks_like_video = "video/" in content_type or url.lower().endswith(
+                (".mp4", ".mov", ".m4v", ".webm")
+            )
+            if not looks_like_video:
+                return None
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file:
+                temp_path = temp_file.name
+                downloaded = 0
+                for chunk in response.iter_content(chunk_size=8192):
+                    if not chunk:
+                        continue
+                    downloaded += len(chunk)
+                    if downloaded > max_bytes:
+                        Path(temp_path).unlink(missing_ok=True)
+                        return None
+                    temp_file.write(chunk)
+                return temp_path
+    except Exception:
+        return None
+
+# def _download_video_to_temp_file(url: str, max_bytes: int = 40 * 1024 * 1024) -> str | None:
+#     try:
+#         if 'instagram' in url:
+#             ydl_opts = {
+#                 # Best video + audio, preferring MP4
+#                 'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4/best',
+
+#                 # Ensure final file is MP4
+#                 'merge_output_format': 'mp4',
+#             }
+#             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+#                 error_code = ydl.download(url)
+#             id = url.rsplit("?v=", 1)[-1]
+#             video_file = glob.glob("*{}*.mp4".format(id))[0]
+#             video_data = open(video_file, 'rb').read()
+#             with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file:
+#                 temp_file.write(video_data)
+#                 temp_path = temp_file.name
+#             os.remove(video_file)
+#             return temp_path
+#         elif 'tiktok' in url:
+#             ydl_opts = {
+#                 # Best video + audio, preferring MP4
+#                 'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4/best',
+
+#                 # Ensure final file is MP4
+#                 'merge_output_format': 'mp4',
+#             }
+#             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+#                 error_code = ydl.download(url)
+#             id = url.rsplit("?v=", 1)[-1]
+#             video_file = glob.glob("*{}*.mp4".format(id))[0]
+#             video_data = open(video_file, 'rb').read()
+#             with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file:
+#                 temp_file.write(video_data)
+#                 temp_path = temp_file.name
+#             os.remove(video_file)
+#             return temp_path
+#         elif 'youtube' not in url:
+#             with requests.get(url, stream=True, timeout=12) as response:
+#                 response.raise_for_status()
+#                 with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file:
+#                     temp_path = temp_file.name
+#                     downloaded = 0
+#                     for chunk in response.iter_content(chunk_size=8192):
+#                         if not chunk:
+#                             continue
+#                         downloaded += len(chunk)
+#                         if downloaded > max_bytes:
+#                             Path(temp_path).unlink(missing_ok=True)
+#                             return None
+#                         temp_file.write(chunk)
+#                     return temp_path
+#         else:
+#             ydl_opts = {
+#                 # Best video + audio, preferring MP4
+#                 'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4/best',
+
+#                 # Ensure final file is MP4
+#                 'merge_output_format': 'mp4',
+#             }
+#             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+#                 error_code = ydl.download(url)
+#             id = url.rsplit("?v=", 1)[-1]
+#             video_file = glob.glob("*{}*.mp4".format(id))[0]
+#             video_data = open(video_file, 'rb').read()
+#             with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file:
+#                 temp_file.write(video_data)
+#                 temp_path = temp_file.name
+#             os.remove(video_file)
+#             return temp_path
+#     except Exception:
+#         return None
 
 
 def infer_image_url(url: str) -> dict[str, Any]:
