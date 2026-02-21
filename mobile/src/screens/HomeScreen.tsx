@@ -75,6 +75,9 @@ export function HomeScreen({ navigation }: Props) {
       <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate("History")}>
         <Text style={styles.secondaryButtonText}>Open History</Text>
       </Pressable>
+      <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate("Blacklist")}>
+        <Text style={styles.secondaryButtonText}>Open Blocked Creators</Text>
+      </Pressable>
 
       <Text style={styles.footer}>User ID: {userFingerprint}</Text>
     </View>

@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { submitVote, updateCreatorList } from "../api/scan";
@@ -12,6 +12,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "Result">;
 export function ResultScreen({ route }: Props) {
   const { result } = route.params;
   const userFingerprint = useAppStore((state) => state.userFingerprint);
+  const queryClient = useQueryClient();
 
   const voteMutation = useMutation({
     mutationFn: submitVote,
@@ -20,7 +21,10 @@ export function ResultScreen({ route }: Props) {
 
   const listMutation = useMutation({
     mutationFn: updateCreatorList,
-    onSuccess: () => Alert.alert("Updated", "Your creator list preference is saved."),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["creatorList", userFingerprint] });
+      Alert.alert("Updated", "Your creator list preference is saved.");
+    },
   });
 
   return (

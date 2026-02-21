@@ -1,15 +1,15 @@
-from typing import Literal
-
 from fastapi import APIRouter, Query
 
 from app.db.memory_store import store
 from app.schemas.api import (
+    CreatorListEntry,
+    ListType,
     ScanRequest,
     ScanResponse,
     UpdateListRequest,
     UpdateListResponse,
     VoteRequest,
-    VoteResponse, ListType, GetListRequest, GetListResponse,
+    VoteResponse,
 )
 from app.services.community import get_community_signal, get_user_vote_weight
 from app.services.scan_orchestrator import run_scan
@@ -53,10 +53,21 @@ def update_creator_list(payload: UpdateListRequest):
     )
     return UpdateListResponse(ok=True)
 
-@router.get("/list", response_model=list[GetListResponse])
-def get_history(userFingerprint: GetListRequest):
-    rows = store.get_creator_list(userFingerprint.userFingerprint)
+@router.get("/list", response_model=list[CreatorListEntry])
+def get_creator_list(
+    userFingerprint: str = Query(min_length=3),
+    listType: ListType | None = Query(default=None),
+):
+    rows = store.get_creator_list(user_fingerprint=userFingerprint, list_type=listType)
     return rows
+
+@router.delete("/list", response_model=UpdateListResponse)
+def remove_creator_from_list(
+    userFingerprint: str = Query(min_length=3),
+    creatorId: str = Query(min_length=1),
+):
+    store.remove_creator_from_list(user_fingerprint=userFingerprint, creator_id=creatorId)
+    return UpdateListResponse(ok=True)
 
 @router.get("/history", response_model=list[ScanResponse])
 def get_history(userFingerprint: str = Query(min_length=3)):

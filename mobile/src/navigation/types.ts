@@ -4,4 +4,5 @@ export type RootStackParamList = {
   Home: undefined;
   Result: { result: ScanResponse };
   History: undefined;
+  Blacklist: undefined;
 };
