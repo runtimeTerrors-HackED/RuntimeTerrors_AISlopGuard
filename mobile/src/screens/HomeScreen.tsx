@@ -90,7 +90,12 @@ export function HomeScreen({ navigation }: Props) {
         {/* Actions */}
         <View style={styles.actions}>
           <Pressable
-            style={[styles.scanButton, !canScan && styles.scanButtonDisabled]}
+            style={({ pressed }) => [
+              styles.scanButton,
+              !canScan && styles.scanButtonDisabled,
+              pressed && canScan && styles.buttonPressed,
+            ]}
+            android_ripple={{ color: "rgba(255,255,255,0.15)", borderless: false }}
             onPress={() =>
               scanMutation.mutate({ url, userFingerprint, conservativeMode })
             }
@@ -104,7 +109,11 @@ export function HomeScreen({ navigation }: Props) {
           </Pressable>
 
           <Pressable
-            style={styles.historyButton}
+            style={({ pressed }) => [
+              styles.historyButton,
+              pressed && styles.buttonPressed,
+            ]}
+            android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
             onPress={() => navigation.navigate("History")}
           >
             <Text style={styles.historyButtonText}>View Scan History</Text>
@@ -234,6 +243,10 @@ function makeStyles(colors: ThemeColors) {
       color: colors.subtext,
       fontWeight: "500",
       fontSize: 14,
+    },
+    buttonPressed: {
+      opacity: 0.72,
+      transform: [{ scale: 0.977 }],
     },
   });
 }

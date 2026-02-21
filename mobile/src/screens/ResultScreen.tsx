@@ -1,4 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { submitVote, updateCreatorList } from "../api/scan";
@@ -9,12 +10,17 @@ import { RootStackParamList } from "../navigation/types";
 import { useAppStore } from "../store/appStore";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Result">;
+type VoteOption = "ai" | "not_ai" | "unsure";
+type ListOption = "allow" | "block";
 
 export function ResultScreen({ route }: Props) {
   const { result } = route.params;
   const colors = useTheme();
   const styles = makeStyles(colors);
   const userFingerprint = useAppStore((state) => state.userFingerprint);
+
+  const [selectedVote, setSelectedVote] = useState<VoteOption | null>(null);
+  const [selectedList, setSelectedList] = useState<ListOption | null>(null);
 
   const voteMutation = useMutation({
     mutationFn: submitVote,
@@ -26,57 +32,111 @@ export function ResultScreen({ route }: Props) {
     onSuccess: () => Alert.alert("Updated", "Your creator list preference is saved."),
   });
 
+  const handleVote = (vote: VoteOption) => {
+    setSelectedVote(vote);
+    voteMutation.mutate({ contentId: result.contentId, userFingerprint, vote });
+  };
+
+  const handleList = (listType: ListOption) => {
+    setSelectedList(listType);
+    listMutation.mutate({ creatorId: result.creatorId, userFingerprint, listType });
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <ScanResultCard result={result} />
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Creator</Text>
+
         <Pressable
-          style={styles.actionButton}
-          onPress={() =>
-            listMutation.mutate({ creatorId: result.creatorId, userFingerprint, listType: "allow" })
-          }
+          style={({ pressed }) => [
+            styles.actionButton,
+            selectedList === "allow" && styles.allowSelected,
+            pressed && styles.buttonPressed,
+          ]}
+          android_ripple={{ color: "rgba(29,185,107,0.15)", borderless: false }}
+          onPress={() => handleList("allow")}
         >
-          <Text style={styles.actionText}>Always Allow This Creator</Text>
+          <View style={styles.actionRow}>
+            <Text style={[styles.actionText, selectedList === "allow" && { color: colors.success }]}>
+              Always Allow This Creator
+            </Text>
+            {selectedList === "allow" && <View style={[styles.selectedDot, { backgroundColor: colors.success }]} />}
+          </View>
         </Pressable>
+
         <Pressable
-          style={[styles.actionButton, styles.dangerButton]}
-          onPress={() =>
-            listMutation.mutate({ creatorId: result.creatorId, userFingerprint, listType: "block" })
-          }
+          style={({ pressed }) => [
+            styles.actionButton,
+            styles.dangerButton,
+            selectedList === "block" && styles.blockSelected,
+            pressed && styles.buttonPressed,
+          ]}
+          android_ripple={{ color: "rgba(232,71,74,0.15)", borderless: false }}
+          onPress={() => handleList("block")}
         >
-          <Text style={[styles.actionText, styles.dangerText]}>Always Block This Creator</Text>
+          <View style={styles.actionRow}>
+            <Text style={[styles.actionText, styles.dangerText, selectedList === "block" && { opacity: 1 }]}>
+              Always Block This Creator
+            </Text>
+            {selectedList === "block" && <View style={[styles.selectedDot, { backgroundColor: colors.danger }]} />}
+          </View>
         </Pressable>
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Improve the model</Text>
         <View style={styles.voteRow}>
+
           <Pressable
-            style={[styles.voteButton, { backgroundColor: colors.dangerDim, borderColor: colors.danger + "35" }]}
-            onPress={() =>
-              voteMutation.mutate({ contentId: result.contentId, userFingerprint, vote: "ai" })
-            }
+            style={({ pressed }) => [
+              styles.voteButton,
+              selectedVote === "ai"
+                ? { backgroundColor: colors.danger, borderColor: colors.danger }
+                : { backgroundColor: colors.dangerDim, borderColor: colors.danger + "35" },
+              pressed && styles.buttonPressed,
+            ]}
+            android_ripple={{ color: "rgba(255,100,100,0.2)", borderless: false }}
+            onPress={() => handleVote("ai")}
           >
-            <Text style={[styles.voteText, { color: colors.danger }]}>AI</Text>
+            <Text style={[styles.voteText, { color: selectedVote === "ai" ? "#fff" : colors.danger }]}>
+              AI
+            </Text>
           </Pressable>
+
           <Pressable
-            style={[styles.voteButton, { backgroundColor: colors.successDim, borderColor: colors.success + "35" }]}
-            onPress={() =>
-              voteMutation.mutate({ contentId: result.contentId, userFingerprint, vote: "not_ai" })
-            }
+            style={({ pressed }) => [
+              styles.voteButton,
+              selectedVote === "not_ai"
+                ? { backgroundColor: colors.success, borderColor: colors.success }
+                : { backgroundColor: colors.successDim, borderColor: colors.success + "35" },
+              pressed && styles.buttonPressed,
+            ]}
+            android_ripple={{ color: "rgba(100,255,150,0.2)", borderless: false }}
+            onPress={() => handleVote("not_ai")}
           >
-            <Text style={[styles.voteText, { color: colors.success }]}>Human</Text>
+            <Text style={[styles.voteText, { color: selectedVote === "not_ai" ? "#fff" : colors.success }]}>
+              Human
+            </Text>
           </Pressable>
+
           <Pressable
-            style={[styles.voteButton, { borderColor: colors.panelBorder }]}
-            onPress={() =>
-              voteMutation.mutate({ contentId: result.contentId, userFingerprint, vote: "unsure" })
-            }
+            style={({ pressed }) => [
+              styles.voteButton,
+              selectedVote === "unsure"
+                ? { backgroundColor: colors.subtext, borderColor: colors.subtext }
+                : { borderColor: colors.panelBorder },
+              pressed && styles.buttonPressed,
+            ]}
+            android_ripple={{ color: "rgba(255,255,255,0.1)", borderless: false }}
+            onPress={() => handleVote("unsure")}
           >
-            <Text style={[styles.voteText, { color: colors.subtext }]}>Unsure</Text>
+            <Text style={[styles.voteText, { color: selectedVote === "unsure" ? "#fff" : colors.subtext }]}>
+              Unsure
+            </Text>
           </Pressable>
+
         </View>
       </View>
     </ScrollView>
@@ -117,9 +177,22 @@ function makeStyles(colors: ThemeColors) {
       paddingVertical: 13,
       paddingHorizontal: 14,
     },
+    allowSelected: {
+      borderColor: colors.success,
+      backgroundColor: colors.successDim,
+    },
     dangerButton: {
       borderColor: colors.danger + "35",
       backgroundColor: colors.dangerDim,
+    },
+    blockSelected: {
+      borderColor: colors.danger,
+      backgroundColor: colors.dangerDim,
+    },
+    actionRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
     },
     actionText: {
       color: colors.text,
@@ -128,6 +201,11 @@ function makeStyles(colors: ThemeColors) {
     },
     dangerText: {
       color: colors.danger,
+    },
+    selectedDot: {
+      width: 7,
+      height: 7,
+      borderRadius: 4,
     },
     voteRow: {
       flexDirection: "row",
@@ -143,6 +221,10 @@ function makeStyles(colors: ThemeColors) {
     voteText: {
       fontSize: 13,
       fontWeight: "600",
+    },
+    buttonPressed: {
+      opacity: 0.72,
+      transform: [{ scale: 0.977 }],
     },
   });
 }
