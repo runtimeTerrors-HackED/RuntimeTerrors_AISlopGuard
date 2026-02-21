@@ -6,4 +6,5 @@ paramas = {
 }
 
 r = requests.get("http://localhost:8000/api/list", json=paramas)
-pprint.pprint(r.json())
+print(r.text)
+#pprint.pprint(r.json())

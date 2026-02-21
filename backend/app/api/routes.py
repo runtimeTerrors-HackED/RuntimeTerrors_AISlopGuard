@@ -9,7 +9,7 @@ from app.schemas.api import (
     UpdateListRequest,
     UpdateListResponse,
     VoteRequest,
-    VoteResponse, ListType, GetListRequest,
+    VoteResponse, ListType, GetListRequest, GetListResponse,
 )
 from app.services.community import get_community_signal, get_user_vote_weight
 from app.services.scan_orchestrator import run_scan
@@ -53,7 +53,7 @@ def update_creator_list(payload: UpdateListRequest):
     )
     return UpdateListResponse(ok=True)
 
-@router.get("/list", response_model=dict[str, ListType])
+@router.get("/list", response_model=list[GetListResponse])
 def get_history(userFingerprint: GetListRequest):
     rows = store.get_creator_list(userFingerprint.userFingerprint)
     return rows
