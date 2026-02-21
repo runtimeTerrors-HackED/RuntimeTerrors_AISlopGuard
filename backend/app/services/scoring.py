@@ -6,9 +6,15 @@ def calculate_final_score(platform_score: float, community_score: float, model_s
     return max(0.0, min(1.0, final_score))
 
 
-def decide_verdict(final_score: float, conservative_mode: bool = True) -> tuple[Verdict, ConfidenceBand]:
+def decide_verdict(
+    final_score: float,
+    conservative_mode: bool = True,
+    low_signal_mode: bool = False,
+) -> tuple[Verdict, ConfidenceBand]:
     likely_ai_threshold = 0.85 if conservative_mode else 0.80
-    unclear_threshold = 0.60 if conservative_mode else 0.55
+    # In low-signal mode (platform unavailable + no community votes), keep AI threshold
+    # strict but widen the unclear band, since model is the only meaningful signal.
+    unclear_threshold = 0.4 if low_signal_mode else (0.60 if conservative_mode else 0.55)
 
     if final_score >= likely_ai_threshold:
         return "likely_ai", "high"

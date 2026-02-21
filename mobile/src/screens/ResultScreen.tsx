@@ -2,6 +2,8 @@ import { useMutation } from "@tanstack/react-query";
 import { useState, useLayoutEffect } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { submitVote, updateCreatorList } from "../api/scan";
 import { ScanResultCard } from "../components/ScanResultCard";
@@ -19,6 +21,7 @@ export function ResultScreen({ route, navigation }: Props) {
   const colors = useTheme();
   const styles = makeStyles(colors);
   const userFingerprint = useAppStore((state) => state.userFingerprint);
+  const queryClient = useQueryClient();
 
   const [selectedVote, setSelectedVote] = useState<VoteOption | null>(null);
   const [selectedList, setSelectedList] = useState<ListOption | null>(null);
@@ -51,6 +54,13 @@ export function ResultScreen({ route, navigation }: Props) {
       listMutation.mutate({ creatorId: result.creatorId, userFingerprint, listType });
     }
   };
+  const listMutation = useMutation({
+    mutationFn: updateCreatorList,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["creatorList", userFingerprint] });
+      Alert.alert("Updated", "Your creator list preference is saved.");
+    },
+  });
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>

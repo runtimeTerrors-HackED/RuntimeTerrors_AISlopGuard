@@ -115,6 +115,12 @@ export function HomeScreen({ navigation }: Props) {
               <Text style={styles.scanButtonText}>Scan Content</Text>
             )}
           </Pressable>
+      <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate("History")}>
+        <Text style={styles.secondaryButtonText}>Open History</Text>
+      </Pressable>
+      <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate("Blacklist")}>
+        <Text style={styles.secondaryButtonText}>Open Blocked Creators</Text>
+      </Pressable>
 
           <Pressable
             style={({ pressed }) => [
