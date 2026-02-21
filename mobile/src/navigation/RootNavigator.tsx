@@ -19,6 +19,8 @@ export function RootNavigator() {
         headerStyle: { backgroundColor: colors.bg },
         headerTintColor: colors.text,
         headerShadowVisible: false,
+        headerBackButtonDisplayMode: "minimal",
+        headerTitleAlign: "center",
         headerTitleStyle: {
           fontWeight: "600",
           fontSize: 17,

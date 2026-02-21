@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useState, useLayoutEffect } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { submitVote, updateCreatorList } from "../api/scan";
 import { ScanResultCard } from "../components/ScanResultCard";
@@ -13,7 +14,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "Result">;
 type VoteOption = "ai" | "not_ai" | "unsure";
 type ListOption = "allow" | "block";
 
-export function ResultScreen({ route }: Props) {
+export function ResultScreen({ route, navigation }: Props) {
   const { result } = route.params;
   const colors = useTheme();
   const styles = makeStyles(colors);
@@ -22,15 +23,22 @@ export function ResultScreen({ route }: Props) {
   const [selectedVote, setSelectedVote] = useState<VoteOption | null>(null);
   const [selectedList, setSelectedList] = useState<ListOption | null>(null);
 
-  const voteMutation = useMutation({
-    mutationFn: submitVote,
-    onSuccess: () => Alert.alert("Thanks", "Your feedback has been recorded."),
-  });
+  const voteMutation = useMutation({ mutationFn: submitVote });
+  const listMutation = useMutation({ mutationFn: updateCreatorList });
 
-  const listMutation = useMutation({
-    mutationFn: updateCreatorList,
-    onSuccess: () => Alert.alert("Updated", "Your creator list preference is saved."),
-  });
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
+          <Ionicons name="checkmark" size={26} color={colors.primary} />
+        </Pressable>
+      ),
+    });
+  }, [navigation, colors]);
 
   const handleVote = (vote: VoteOption) => {
     setSelectedVote(vote);
@@ -139,6 +147,7 @@ export function ResultScreen({ route }: Props) {
 
         </View>
       </View>
+
     </ScrollView>
   );
 }
