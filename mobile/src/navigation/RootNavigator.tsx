@@ -32,7 +32,7 @@ export function RootNavigator() {
     >
       <Stack.Screen name="Home" component={HomeScreen} options={{ title: "SlopGuard" }} />
       <Stack.Screen name="Result" component={ResultScreen} options={{ title: "Scan Result" }} />
-      <Stack.Screen name="History" component={HistoryScreen} options={{ title: "Scan History" }} />
+      <Stack.Screen name="History" component={HistoryScreen} options={{ title: "History" }} />
       <Stack.Screen name="Blacklist" component={BlacklistScreen} options={{ title: "Blocked Creators" }} />
     </Stack.Navigator>
   );

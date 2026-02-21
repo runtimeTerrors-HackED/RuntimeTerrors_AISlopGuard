@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -10,10 +9,13 @@ import {
   View,
 } from "react-native";
 import { fetchCreatorList, removeCreatorFromList } from "../api/scan";
-import { colors } from "../constants/theme";
+import { useTheme } from "../hooks/useTheme";
+import { ThemeColors } from "../constants/theme";
 import { useAppStore } from "../store/appStore";
 
 export function BlacklistScreen() {
+  const colors = useTheme();
+  const styles = makeStyles(colors);
   const userFingerprint = useAppStore((state) => state.userFingerprint);
   const queryClient = useQueryClient();
 
@@ -26,7 +28,6 @@ export function BlacklistScreen() {
     mutationFn: removeCreatorFromList,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["creatorList", userFingerprint] });
-      Alert.alert("Updated", "Creator removed from your block list.");
     },
   });
 
@@ -35,40 +36,51 @@ export function BlacklistScreen() {
       style={styles.container}
       contentContainerStyle={styles.content}
       refreshControl={
-        <RefreshControl refreshing={blacklistQuery.isRefetching} onRefresh={blacklistQuery.refetch} />
+        <RefreshControl
+          refreshing={blacklistQuery.isRefetching}
+          onRefresh={blacklistQuery.refetch}
+          tintColor={colors.subtext}
+        />
       }
     >
       {blacklistQuery.isLoading ? (
         <View style={styles.centered}>
           <ActivityIndicator color={colors.primary} />
-          <Text style={styles.loadingText}>Loading blocked creators...</Text>
+          <Text style={styles.centeredText}>Loading...</Text>
         </View>
       ) : null}
 
       {blacklistQuery.isError ? (
-        <Text style={styles.error}>
-          Could not load block list: {(blacklistQuery.error as Error).message}
-        </Text>
+        <View style={styles.centered}>
+          <Text style={styles.errorText}>
+            {(blacklistQuery.error as Error).message}
+          </Text>
+        </View>
       ) : null}
 
       {!blacklistQuery.isLoading && blacklistQuery.data?.length === 0 ? (
-        <Text style={styles.empty}>No blocked creators yet.</Text>
+        <View style={styles.centered}>
+          <Text style={styles.emptyText}>No blocked creators</Text>
+          <Text style={styles.emptyCaption}>
+            Creators you block will appear here.
+          </Text>
+        </View>
       ) : null}
 
       {blacklistQuery.data?.map((item) => (
-        <View key={item.creatorId} style={styles.blockedRow}>
-          <View style={styles.blockedInfo}>
-            <Text style={styles.creatorLabel}>Creator</Text>
-            <Text style={styles.creatorId}>{item.creatorId}</Text>
+        <View key={item.creatorId} style={styles.row}>
+          <View style={styles.rowInfo}>
+            <Text style={styles.rowLabel}>Creator</Text>
+            <Text style={styles.rowId} numberOfLines={1}>{item.creatorId}</Text>
           </View>
           <Pressable
-            style={[styles.unblockButton, unblockMutation.isPending && styles.buttonDisabled]}
-            onPress={() =>
-              unblockMutation.mutate({
-                userFingerprint,
-                creatorId: item.creatorId,
-              })
-            }
+            style={({ pressed }) => [
+              styles.unblockButton,
+              pressed && styles.buttonPressed,
+              unblockMutation.isPending && styles.buttonDisabled,
+            ]}
+            android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
+            onPress={() => unblockMutation.mutate({ userFingerprint, creatorId: item.creatorId })}
             disabled={unblockMutation.isPending}
           >
             <Text style={styles.unblockText}>Unblock</Text>
@@ -79,66 +91,87 @@ export function BlacklistScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  content: {
-    padding: 16,
-    gap: 12,
-  },
-  centered: {
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 24,
-  },
-  loadingText: {
-    color: colors.text,
-  },
-  error: {
-    color: colors.danger,
-    fontSize: 14,
-  },
-  empty: {
-    color: colors.subtext,
-    fontSize: 14,
-  },
-  blockedRow: {
-    backgroundColor: colors.panel,
-    borderColor: "#1e293b",
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    gap: 10,
-  },
-  blockedInfo: {
-    gap: 4,
-  },
-  creatorLabel: {
-    color: colors.subtext,
-    fontSize: 12,
-    textTransform: "uppercase",
-  },
-  creatorId: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  unblockButton: {
-    alignSelf: "flex-start",
-    borderColor: "#334155",
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  unblockText: {
-    color: colors.text,
-    fontWeight: "600",
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-});
+function makeStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    content: {
+      padding: 24,
+      gap: 10,
+      paddingBottom: 48,
+    },
+    centered: {
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+      paddingVertical: 80,
+    },
+    centeredText: {
+      color: colors.subtext,
+      fontSize: 14,
+    },
+    errorText: {
+      color: colors.danger,
+      fontSize: 14,
+      textAlign: "center",
+    },
+    emptyText: {
+      color: colors.text,
+      fontSize: 16,
+      fontWeight: "600",
+    },
+    emptyCaption: {
+      color: colors.subtext,
+      fontSize: 14,
+      textAlign: "center",
+    },
+    row: {
+      backgroundColor: colors.panel,
+      borderWidth: 1,
+      borderColor: colors.panelBorder,
+      borderRadius: 14,
+      padding: 14,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+    },
+    rowInfo: {
+      flex: 1,
+      gap: 3,
+    },
+    rowLabel: {
+      color: colors.subtext,
+      fontSize: 11,
+      fontWeight: "600",
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+    },
+    rowId: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: "500",
+    },
+    unblockButton: {
+      borderWidth: 1,
+      borderColor: colors.panelBorder,
+      borderRadius: 8,
+      paddingVertical: 7,
+      paddingHorizontal: 14,
+    },
+    unblockText: {
+      color: colors.text,
+      fontWeight: "500",
+      fontSize: 13,
+    },
+    buttonPressed: {
+      opacity: 0.6,
+      transform: [{ scale: 0.97 }],
+    },
+    buttonDisabled: {
+      opacity: 0.4,
+    },
+  });
+}

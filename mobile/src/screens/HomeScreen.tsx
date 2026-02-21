@@ -115,23 +115,29 @@ export function HomeScreen({ navigation }: Props) {
               <Text style={styles.scanButtonText}>Scan Content</Text>
             )}
           </Pressable>
-      <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate("History")}>
-        <Text style={styles.secondaryButtonText}>Open History</Text>
-      </Pressable>
-      <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate("Blacklist")}>
-        <Text style={styles.secondaryButtonText}>Open Blocked Creators</Text>
-      </Pressable>
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.historyButton,
-              pressed && styles.buttonPressed,
-            ]}
-            android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
-            onPress={() => navigation.navigate("History")}
-          >
-            <Text style={styles.historyButtonText}>View Scan History</Text>
-          </Pressable>
+          <View style={styles.secondaryRow}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.secondaryButton,
+                pressed && styles.buttonPressed,
+              ]}
+              android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
+              onPress={() => navigation.navigate("History")}
+            >
+              <Text style={styles.secondaryButtonText}>History</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.secondaryButton,
+                pressed && styles.buttonPressed,
+              ]}
+              android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
+              onPress={() => navigation.navigate("Blacklist")}
+            >
+              <Text style={styles.secondaryButtonText}>Blocked</Text>
+            </Pressable>
+          </View>
         </View>
 
       </View>
@@ -245,7 +251,12 @@ function makeStyles(colors: ThemeColors) {
       fontSize: 15,
       letterSpacing: 0.1,
     },
-    historyButton: {
+    secondaryRow: {
+      flexDirection: "row",
+      gap: 10,
+    },
+    secondaryButton: {
+      flex: 1,
       backgroundColor: colors.panel,
       borderWidth: 1,
       borderColor: colors.panelBorder,
@@ -253,7 +264,7 @@ function makeStyles(colors: ThemeColors) {
       borderRadius: 12,
       alignItems: "center",
     },
-    historyButtonText: {
+    secondaryButtonText: {
       color: colors.subtext,
       fontWeight: "500",
       fontSize: 14,
