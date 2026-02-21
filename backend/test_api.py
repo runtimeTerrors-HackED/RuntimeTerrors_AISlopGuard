@@ -2,7 +2,7 @@ import requests
 import pprint
 
 paramas = {
-  "url": "https://www.youtube.com/watch?v=OlNv7OY9thM",
+  "url": "https://www.tiktok.com/@longliveai/video/7559491915780001046",
   "userFingerprint": "anon_123",
   "conservativeMode": True
 }
