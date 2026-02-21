@@ -1,8 +1,0 @@
-{
-  "dependencies": {
-    "expo": "^54.0.33"
-  },
-  "devDependencies": {
-    "babel-preset-expo": "^54.0.10"
-  }
-}
