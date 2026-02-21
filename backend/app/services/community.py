@@ -8,6 +8,7 @@ class CommunitySignal:
     score: float
     message: str
     strength: str
+    has_votes: bool
 
 
 def get_user_vote_weight(user_fingerprint: str) -> float:
@@ -24,6 +25,7 @@ def get_community_signal(content_id: str) -> CommunitySignal:
             score=0,
             message="No community votes yet.",
             strength="low",
+            has_votes=False,
         )
 
     ai_weight = sum(v.weight for v in votes if v.vote == "ai")
@@ -36,6 +38,7 @@ def get_community_signal(content_id: str) -> CommunitySignal:
             score=0.5,
             message="Community votes exist, but no weighted signal available yet.",
             strength="low",
+            has_votes=True,
         )
 
     score = (ai_weight + 0.5 * unsure_weight) / total
@@ -48,4 +51,5 @@ def get_community_signal(content_id: str) -> CommunitySignal:
             f"not_ai: {not_ai_weight:.1f}, unsure: {unsure_weight:.1f}"
         ),
         strength=strength,
+        has_votes=True,
     )
