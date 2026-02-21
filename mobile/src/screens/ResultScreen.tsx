@@ -12,7 +12,7 @@ import { useAppStore } from "../store/appStore";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Result">;
 type VoteOption = "ai" | "not_ai" | "unsure";
-type ListOption = "allow" | "block";
+type ListOption = "allow" | "block" | "unsure";
 
 export function ResultScreen({ route, navigation }: Props) {
   const { result } = route.params;
@@ -47,7 +47,9 @@ export function ResultScreen({ route, navigation }: Props) {
 
   const handleList = (listType: ListOption) => {
     setSelectedList(listType);
-    listMutation.mutate({ creatorId: result.creatorId, userFingerprint, listType });
+    if (listType !== "unsure") {
+      listMutation.mutate({ creatorId: result.creatorId, userFingerprint, listType });
+    }
   };
 
   return (
@@ -59,38 +61,49 @@ export function ResultScreen({ route, navigation }: Props) {
 
         <Pressable
           style={({ pressed }) => [
-            styles.actionButton,
-            selectedList === "allow" && styles.allowSelected,
+            styles.creatorButton,
+            selectedList === "allow" && { borderColor: colors.success, backgroundColor: colors.successDim },
             pressed && styles.buttonPressed,
           ]}
           android_ripple={{ color: "rgba(29,185,107,0.15)", borderless: false }}
           onPress={() => handleList("allow")}
         >
-          <View style={styles.actionRow}>
-            <Text style={[styles.actionText, selectedList === "allow" && { color: colors.success }]}>
-              Always Allow This Creator
-            </Text>
-            {selectedList === "allow" && <View style={[styles.selectedDot, { backgroundColor: colors.success }]} />}
-          </View>
+          <Text style={[styles.creatorButtonText, selectedList === "allow" && { color: colors.success }]}>
+            Always Allow This Creator
+          </Text>
+          {selectedList === "allow" && <View style={[styles.selectedDot, { backgroundColor: colors.success }]} />}
         </Pressable>
 
         <Pressable
           style={({ pressed }) => [
-            styles.actionButton,
-            styles.dangerButton,
-            selectedList === "block" && styles.blockSelected,
+            styles.creatorButton,
+            selectedList === "block" && { borderColor: colors.danger, backgroundColor: colors.dangerDim },
             pressed && styles.buttonPressed,
           ]}
           android_ripple={{ color: "rgba(232,71,74,0.15)", borderless: false }}
           onPress={() => handleList("block")}
         >
-          <View style={styles.actionRow}>
-            <Text style={[styles.actionText, styles.dangerText, selectedList === "block" && { opacity: 1 }]}>
-              Always Block This Creator
-            </Text>
-            {selectedList === "block" && <View style={[styles.selectedDot, { backgroundColor: colors.danger }]} />}
-          </View>
+          <Text style={[styles.creatorButtonText, selectedList === "block" && { color: colors.danger }]}>
+            Always Block This Creator
+          </Text>
+          {selectedList === "block" && <View style={[styles.selectedDot, { backgroundColor: colors.danger }]} />}
         </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.creatorButton,
+            selectedList === "unsure" && { borderColor: colors.subtext, backgroundColor: colors.panelBorder },
+            pressed && styles.buttonPressed,
+          ]}
+          android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
+          onPress={() => handleList("unsure")}
+        >
+          <Text style={[styles.creatorButtonText, selectedList === "unsure" && { color: colors.subtext }]}>
+            Unsure
+          </Text>
+          {selectedList === "unsure" && <View style={[styles.selectedDot, { backgroundColor: colors.subtext }]} />}
+        </Pressable>
+
       </View>
 
       <View style={styles.section}>
@@ -179,37 +192,20 @@ function makeStyles(colors: ThemeColors) {
       letterSpacing: 0.8,
       marginBottom: 2,
     },
-    actionButton: {
-      borderColor: colors.panelBorder,
+    creatorButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       borderWidth: 1,
+      borderColor: colors.panelBorder,
       borderRadius: 10,
       paddingVertical: 13,
       paddingHorizontal: 14,
     },
-    allowSelected: {
-      borderColor: colors.success,
-      backgroundColor: colors.successDim,
-    },
-    dangerButton: {
-      borderColor: colors.danger + "35",
-      backgroundColor: colors.dangerDim,
-    },
-    blockSelected: {
-      borderColor: colors.danger,
-      backgroundColor: colors.dangerDim,
-    },
-    actionRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-    },
-    actionText: {
+    creatorButtonText: {
       color: colors.text,
       fontWeight: "500",
       fontSize: 14,
-    },
-    dangerText: {
-      color: colors.danger,
     },
     selectedDot: {
       width: 7,
