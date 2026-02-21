@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -32,6 +33,13 @@ export function HomeScreen({ navigation }: Props) {
     mutationFn: scanContent,
     onSuccess: (result) => navigation.navigate("Result", { result }),
   });
+
+  useFocusEffect(
+    useCallback(() => {
+      setUrl("");
+      scanMutation.reset();
+    }, [])
+  );
 
   const canScan = !!url.trim() && !scanMutation.isPending;
 
