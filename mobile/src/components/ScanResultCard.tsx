@@ -117,10 +117,12 @@ export function ScanResultCard({ result, appliedBiasSnapshot, historyMeta }: Pro
 
       {isBlocked ? (
         <View style={styles.blockedBanner}>
-          <View style={[styles.pillDot, { backgroundColor: colors.danger }]} />
-          <Text style={[styles.blockedText, { color: colors.danger }]}>
-            This creator is blocked
-          </Text>
+          <View style={styles.blockedBannerContent}>
+            <View style={[styles.pillDot, { backgroundColor: colors.danger }]} />
+            <Text style={[styles.blockedText, { color: colors.danger }]}>
+              This creator is blocked
+            </Text>
+          </View>
         </View>
       ) : (
         <>
@@ -230,15 +232,19 @@ function makeStyles(colors: ThemeColors) {
       alignSelf: "center",
     },
     blockedBanner: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
       backgroundColor: colors.dangerDim,
       borderWidth: 1,
       borderColor: colors.danger + "35",
       borderRadius: 10,
       paddingHorizontal: 14,
       paddingVertical: 12,
+      transform: [{ skewX: "-10deg" }],
+    },
+    blockedBannerContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      transform: [{ skewX: "10deg" }],
     },
     pillDot: {
       width: 7,
