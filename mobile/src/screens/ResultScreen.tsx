@@ -86,16 +86,19 @@ export function ResultScreen({ route, navigation }: Props) {
         <Pressable
           style={({ pressed }) => [
             styles.creatorButton,
-            isBlocked && { borderColor: colors.danger, backgroundColor: colors.dangerDim },
             pressed && styles.buttonPressed,
           ]}
           android_ripple={{ color: "rgba(232,71,74,0.15)", borderless: false }}
           onPress={handleBlockToggle}
         >
-          <Text style={[styles.creatorButtonText, isBlocked && { color: colors.danger }]}>
-            {isBlocked ? "Unblock This Creator" : "Block This Creator"}
-          </Text>
-          {isBlocked && <View style={[styles.selectedDot, { backgroundColor: colors.danger }]} />}
+          <View style={[styles.creatorButtonFace, isBlocked && styles.creatorButtonFaceBlocked]}>
+            <View style={styles.creatorButtonContent}>
+              <Text style={[styles.creatorButtonText, isBlocked && { color: colors.danger }]}>
+                {isBlocked ? "Unblock This Creator" : "Block This Creator"}
+              </Text>
+              {isBlocked && <View style={[styles.selectedDot, { backgroundColor: colors.danger }]} />}
+            </View>
+          </View>
         </Pressable>
       </View>
 
@@ -106,49 +109,73 @@ export function ResultScreen({ route, navigation }: Props) {
           <Pressable
             style={({ pressed }) => [
               styles.voteButton,
-              selectedVote === "ai"
-                ? { backgroundColor: colors.danger, borderColor: colors.danger }
-                : { backgroundColor: colors.panel, borderColor: colors.panelBorder },
               pressed && styles.buttonPressed,
             ]}
             android_ripple={{ color: "rgba(255,100,100,0.2)", borderless: false }}
             onPress={() => handleVote("ai")}
           >
-            <Text style={[styles.voteText, { color: selectedVote === "ai" ? "#fff" : colors.danger }]}>
-              AI
-            </Text>
+            <View
+              style={[
+                styles.voteButtonFace,
+                selectedVote === "ai"
+                  ? { backgroundColor: colors.danger, borderColor: colors.danger }
+                  : { backgroundColor: colors.panel, borderColor: colors.panelBorder },
+              ]}
+            >
+              <View style={styles.voteButtonContent}>
+                <Text style={[styles.voteText, { color: selectedVote === "ai" ? "#fff" : colors.danger }]}>
+                  AI
+                </Text>
+              </View>
+            </View>
           </Pressable>
 
           <Pressable
             style={({ pressed }) => [
               styles.voteButton,
-              selectedVote === "not_ai"
-                ? { backgroundColor: colors.success, borderColor: colors.success }
-                : { backgroundColor: colors.panel, borderColor: colors.panelBorder },
               pressed && styles.buttonPressed,
             ]}
             android_ripple={{ color: "rgba(100,255,150,0.2)", borderless: false }}
             onPress={() => handleVote("not_ai")}
           >
-            <Text style={[styles.voteText, { color: selectedVote === "not_ai" ? "#fff" : colors.success }]}>
-              Human
-            </Text>
+            <View
+              style={[
+                styles.voteButtonFace,
+                selectedVote === "not_ai"
+                  ? { backgroundColor: colors.success, borderColor: colors.success }
+                  : { backgroundColor: colors.panel, borderColor: colors.panelBorder },
+              ]}
+            >
+              <View style={styles.voteButtonContent}>
+                <Text style={[styles.voteText, { color: selectedVote === "not_ai" ? "#fff" : colors.success }]}>
+                  Human
+                </Text>
+              </View>
+            </View>
           </Pressable>
 
           <Pressable
             style={({ pressed }) => [
               styles.voteButton,
-              selectedVote === "unsure"
-                ? { backgroundColor: colors.subtext, borderColor: colors.subtext }
-                : { backgroundColor: colors.panel, borderColor: colors.panelBorder },
               pressed && styles.buttonPressed,
             ]}
             android_ripple={{ color: "rgba(255,255,255,0.1)", borderless: false }}
             onPress={() => handleVote("unsure")}
           >
-            <Text style={[styles.voteText, { color: selectedVote === "unsure" ? "#fff" : colors.subtext }]}>
-              Unsure
-            </Text>
+            <View
+              style={[
+                styles.voteButtonFace,
+                selectedVote === "unsure"
+                  ? { backgroundColor: colors.subtext, borderColor: colors.subtext }
+                  : { backgroundColor: colors.panel, borderColor: colors.panelBorder },
+              ]}
+            >
+              <View style={styles.voteButtonContent}>
+                <Text style={[styles.voteText, { color: selectedVote === "unsure" ? "#fff" : colors.subtext }]}>
+                  Unsure
+                </Text>
+              </View>
+            </View>
           </Pressable>
         </View>
       </View>}
@@ -185,6 +212,9 @@ function makeStyles(colors: ThemeColors) {
       marginBottom: 2,
     },
     creatorButton: {
+      alignItems: "stretch",
+    },
+    creatorButtonFace: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
@@ -193,6 +223,19 @@ function makeStyles(colors: ThemeColors) {
       borderRadius: 10,
       paddingVertical: 13,
       paddingHorizontal: 14,
+      backgroundColor: colors.panel,
+      transform: [{ skewX: "-12deg" }],
+    },
+    creatorButtonFaceBlocked: {
+      borderColor: colors.danger,
+      backgroundColor: colors.dangerDim,
+    },
+    creatorButtonContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      transform: [{ skewX: "12deg" }],
+      width: "100%",
     },
     creatorButtonText: {
       color: colors.text,
@@ -210,10 +253,18 @@ function makeStyles(colors: ThemeColors) {
     },
     voteButton: {
       flex: 1,
+      alignItems: "stretch",
+    },
+    voteButtonFace: {
       borderWidth: 1,
       borderRadius: 10,
       paddingVertical: 13,
       alignItems: "center",
+      justifyContent: "center",
+      transform: [{ skewX: "-12deg" }],
+    },
+    voteButtonContent: {
+      transform: [{ skewX: "12deg" }],
     },
     voteText: {
       fontSize: 13,

@@ -258,8 +258,23 @@ export function HomeScreen({ navigation }: Props) {
                 ]}
                 android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
                 onPress={() => navigation.navigate("History")}
+                accessibilityRole="button"
+                accessibilityLabel="View scan history"
+                accessibilityHint="Opens your previous scans"
               >
-                <Text style={styles.secondaryButtonText}>History</Text>
+                <View style={[styles.secondaryButtonFace, styles.historyButton]}>
+                  <View style={styles.secondaryButtonContent}>
+                    <Ionicons
+                      name="time-outline"
+                      size={16}
+                      color={colors.primary}
+                      style={styles.secondaryIcon}
+                    />
+                    <Text style={[styles.secondaryButtonText, styles.historyButtonText]}>
+                      History
+                    </Text>
+                  </View>
+                </View>
               </Pressable>
               <Pressable
                 style={({ pressed }) => [
@@ -268,8 +283,23 @@ export function HomeScreen({ navigation }: Props) {
                 ]}
                 android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
                 onPress={() => navigation.navigate("Blacklist")}
+                accessibilityRole="button"
+                accessibilityLabel="View blocked creators"
+                accessibilityHint="Opens your blocked creators list"
               >
-                <Text style={styles.secondaryButtonText}>Blocked</Text>
+                <View style={[styles.secondaryButtonFace, styles.blockedButton]}>
+                  <View style={styles.secondaryButtonContent}>
+                    <Ionicons
+                      name="shield-outline"
+                      size={16}
+                      color={BLOCKED_ACCENT}
+                      style={styles.secondaryIcon}
+                    />
+                    <Text style={[styles.secondaryButtonText, styles.blockedButtonText]}>
+                      Blocked
+                    </Text>
+                  </View>
+                </View>
               </Pressable>
             </View>
             <Pressable

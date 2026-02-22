@@ -254,13 +254,11 @@ function makeStyles(colors: ThemeColors) {
       borderRadius: 8,
       borderWidth: 1,
       borderColor: colors.panelBorder,
-      transform: [{ skewX: "-10deg" }],
       overflow: "hidden",
     },
     statsRowContent: {
       flexDirection: "row",
       paddingVertical: 14,
-      transform: [{ skewX: "10deg" }],
     },
     stat: {
       flex: 1,
