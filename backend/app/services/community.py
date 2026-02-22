@@ -69,27 +69,27 @@ def get_community_signal(content_id: str) -> CommunitySignal:
 
 
 
-        if inBlockList:
-            return CommunitySignal(
-                score=1.0,
-                message="Community score 1.0 (high). Channel is in public blocklist.",
-                strength="high",
-                has_votes=False,
-            )
-        elif inWarnList:
-            return CommunitySignal(
-                score=0.75,
-                message="Community score 0.75 (medium). Channel is in public warnlist.",
-                strength="medium",
-                has_votes=False,
-            )
-        else:
-            return CommunitySignal(
-                score=0.5,
-                message="Community score 0.5 (low).",
-                strength="low",
-                has_votes=False,
-            )
+    if inBlockList:
+        return CommunitySignal(
+            score=1.0,
+            message="Community score 1.0 (high). Channel is in public blocklist.",
+            strength="high",
+            has_votes=False,
+        )
+    elif inWarnList:
+        return CommunitySignal(
+            score=0.75,
+            message="Community score 0.75 (medium). Channel is in public warnlist.",
+            strength="medium",
+            has_votes=False,
+        )
+    else:
+        return CommunitySignal(
+            score=0.5,
+            message="Community score 0.5 (low).",
+            strength="low",
+            has_votes=False,
+        )
 
 
     # The following commented code can be removed, as votes should affect model and not community score
