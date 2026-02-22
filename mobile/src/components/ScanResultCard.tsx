@@ -122,7 +122,7 @@ export function ScanResultCard({ result, appliedBiasSnapshot, historyMeta }: Pro
           <View style={styles.statsRow}>
             <View style={styles.stat}>
               <Text style={styles.statValue}>{(result.finalScore * 100).toFixed(0)}%</Text>
-              <Text style={styles.statLabel}>AI Score</Text>
+              <Text style={styles.statLabel}>Final Score</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.stat}>
@@ -144,7 +144,7 @@ export function ScanResultCard({ result, appliedBiasSnapshot, historyMeta }: Pro
             <View style={styles.modelStat}>
               <Text style={styles.modelValue}>{personalizedModelScore.toFixed(2)}</Text>
               <Text style={styles.modelLabel}>
-                {hasModelDelta ? "Personalized model" : "Model (no bias)"}
+                {hasModelDelta ? "Personalized model" : "Model (no bias)"} - Used in calculation of Final Score
               </Text>
             </View>
           </View>

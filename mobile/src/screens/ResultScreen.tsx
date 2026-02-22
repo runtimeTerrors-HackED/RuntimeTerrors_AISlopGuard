@@ -101,7 +101,7 @@ export function ResultScreen({ route, navigation }: Props) {
       </View>
 
       {!isBlocked && <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Improve the model</Text>
+        <Text style={styles.sectionLabel}>Improve the model - Only select an option if the model score is unexpected, not the final score</Text>
         <View style={styles.voteRow}>
 
           <Pressable

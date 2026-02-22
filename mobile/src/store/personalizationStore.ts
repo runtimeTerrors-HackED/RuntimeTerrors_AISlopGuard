@@ -76,7 +76,7 @@ type PersonalizationState = {
   resetPersonalization: () => void;
 };
 
-const GLOBAL_STEP = 0.005;
+const GLOBAL_STEP = 0.01;
 const CREATOR_STEP = 0.1;
 const GLOBAL_MIN = -1;
 const GLOBAL_MAX = 1;
@@ -305,7 +305,7 @@ export const usePersonalizationStore = create<PersonalizationState>()(
             if (item.source !== "model") return item;
             return {
               ...item,
-              message: `Model score ${baseModelScore.toFixed(2)} (raw; no personalization delta).`,
+              message: `Model score ${baseModelScore.toFixed(2)} (raw; no personalization delta). Higher the model score, higher the likelihood that the model thinks the content is AI Slop. Model Score is just one factor of the final score calculated above. Vote down below if you think the model score seems wrong.`,
             };
           });
           return {
@@ -339,7 +339,7 @@ export const usePersonalizationStore = create<PersonalizationState>()(
           if (item.source !== "model") return item;
           return {
             ...item,
-            message: `Model score ${adjustedModelForDecision.toFixed(2)} (personalized; raw ${baseModelScore.toFixed(2)}).`,
+            message: `Model score ${adjustedModelForDecision.toFixed(2)} (personalized; raw ${baseModelScore.toFixed(2)}). Higher the model score, higher the likelihood that the model thinks the content is AI Slop. Model Score is just one factor of the final score calculated above. Vote down below if you think the model score seems wrong.`,
           };
         });
 
