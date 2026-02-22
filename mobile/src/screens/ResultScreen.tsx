@@ -1,32 +1,39 @@
 import { useMutation } from "@tanstack/react-query";
-import { useState, useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { submitVote, updateCreatorList, removeCreatorFromList } from "../api/scan";
+import { updateCreatorList, removeCreatorFromList } from "../api/scan";
 import { ScanResultCard } from "../components/ScanResultCard";
 import { useTheme } from "../hooks/useTheme";
 import { ThemeColors } from "../constants/theme";
 import { RootStackParamList } from "../navigation/types";
 import { useAppStore } from "../store/appStore";
+import { makeScanKey, usePersonalizationStore } from "../store/personalizationStore";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Result">;
 type VoteOption = "ai" | "not_ai" | "unsure";
 
 export function ResultScreen({ route, navigation }: Props) {
-  const { result } = route.params;
+  const { result, contentUrl } = route.params;
   const colors = useTheme();
   const styles = makeStyles(colors);
   const userFingerprint = useAppStore((state) => state.userFingerprint);
+  const scanKey = makeScanKey(result.contentId, result.scannedAt);
+  const recordFeedback = usePersonalizationStore((state) => state.recordFeedback);
+  const captureScanContext = usePersonalizationStore((state) => state.captureScanContext);
+  const previousVote = usePersonalizationStore((state) => state.contentFeedback[result.contentId]);
+  const appliedBiasSnapshot = usePersonalizationStore(
+    (state) => state.contentBiasSnapshot[scanKey] ?? state.contentBiasSnapshot[result.contentId]
+  );
 
   const alreadyBlocked = result.evidence.some(
     (e) => e.source === "user_list" && e.message.toLowerCase().includes("block")
   );
 
-  const [selectedVote, setSelectedVote] = useState<VoteOption | null>(null);
+  const [selectedVote, setSelectedVote] = useState<VoteOption | null>(previousVote ?? null);
   const [isBlocked, setIsBlocked] = useState(alreadyBlocked);
 
-  const voteMutation = useMutation({ mutationFn: submitVote });
   const blockMutation = useMutation({ mutationFn: updateCreatorList });
   const unblockMutation = useMutation({ mutationFn: removeCreatorFromList });
 
@@ -51,9 +58,13 @@ export function ResultScreen({ route, navigation }: Props) {
     });
   }, [navigation, colors]);
 
+  useEffect(() => {
+    captureScanContext(result, contentUrl ?? result.contentUrl ?? undefined);
+  }, [captureScanContext, contentUrl, result]);
+
   const handleVote = (vote: VoteOption) => {
     setSelectedVote(vote);
-    voteMutation.mutate({ contentId: result.contentId, userFingerprint, vote });
+    recordFeedback(result, vote);
   };
 
   const handleBlockToggle = () => {
@@ -68,7 +79,7 @@ export function ResultScreen({ route, navigation }: Props) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <ScanResultCard result={result} />
+      <ScanResultCard result={result} appliedBiasSnapshot={appliedBiasSnapshot} />
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Creator</Text>
