@@ -49,6 +49,10 @@ export function ScanResultCard({ result }: Props) {
   const imgWidth = width - 48 - 32;
   const imgHeight = Math.round(imgWidth * (9 / 16));
 
+  const isBlocked = result.evidence.some(
+    (e) => e.source === "user_list" && e.message.toLowerCase().includes("block")
+  );
+
   return (
     <View style={styles.card}>
       {result.platform === "youtube" && result.canonicalId ? (
@@ -59,26 +63,36 @@ export function ScanResultCard({ result }: Props) {
         />
       ) : null}
 
-      <VerdictPill verdict={result.verdict} colors={colors} />
+      {isBlocked ? (
+        <View style={styles.blockedBanner}>
+          <View style={[styles.pillDot, { backgroundColor: colors.danger }]} />
+          <Text style={[styles.blockedText, { color: colors.danger }]}>
+            This creator is blocked
+          </Text>
+        </View>
+      ) : (
+        <>
+          <VerdictPill verdict={result.verdict} colors={colors} />
+          <View style={styles.statsRow}>
+            <View style={styles.stat}>
+              <Text style={styles.statValue}>{(result.finalScore * 100).toFixed(0)}%</Text>
+              <Text style={styles.statLabel}>AI Score</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.stat}>
+              <Text style={styles.statValue}>{confidenceLabel(result.confidenceBand)}</Text>
+              <Text style={styles.statLabel}>Confidence</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.stat}>
+              <Text style={styles.statValue}>{result.platform}</Text>
+              <Text style={styles.statLabel}>Platform</Text>
+            </View>
+          </View>
+        </>
+      )}
 
-      <View style={styles.statsRow}>
-        <View style={styles.stat}>
-          <Text style={styles.statValue}>{(result.finalScore * 100).toFixed(0)}%</Text>
-          <Text style={styles.statLabel}>AI Score</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.stat}>
-          <Text style={styles.statValue}>{confidenceLabel(result.confidenceBand)}</Text>
-          <Text style={styles.statLabel}>Confidence</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.stat}>
-          <Text style={styles.statValue}>{result.platform}</Text>
-          <Text style={styles.statLabel}>Platform</Text>
-        </View>
-      </View>
-
-      {result.evidence.length > 0 ? (
+      {result.evidence.length > 0 && !isBlocked ? (
         <View style={styles.evidenceSection}>
           <Text style={styles.evidenceTitle}>Evidence</Text>
           {result.evidence.map((e, idx) => (
@@ -107,6 +121,26 @@ function makeStyles(colors: ThemeColors) {
     thumbnail: {
       borderRadius: 8,
       alignSelf: "center",
+    },
+    blockedBanner: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      backgroundColor: colors.dangerDim,
+      borderWidth: 1,
+      borderColor: colors.danger + "35",
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+    },
+    pillDot: {
+      width: 7,
+      height: 7,
+      borderRadius: 4,
+    },
+    blockedText: {
+      fontSize: 14,
+      fontWeight: "600",
     },
     statsRow: {
       flexDirection: "row",

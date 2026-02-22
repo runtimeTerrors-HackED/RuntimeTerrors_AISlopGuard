@@ -3,7 +3,7 @@ import { useState, useLayoutEffect } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { submitVote, updateCreatorList } from "../api/scan";
+import { submitVote, updateCreatorList, removeCreatorFromList } from "../api/scan";
 import { ScanResultCard } from "../components/ScanResultCard";
 import { useTheme } from "../hooks/useTheme";
 import { ThemeColors } from "../constants/theme";
@@ -12,7 +12,6 @@ import { useAppStore } from "../store/appStore";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Result">;
 type VoteOption = "ai" | "not_ai" | "unsure";
-type ListOption = "allow" | "block" | "unsure";
 
 export function ResultScreen({ route, navigation }: Props) {
   const { result } = route.params;
@@ -20,21 +19,33 @@ export function ResultScreen({ route, navigation }: Props) {
   const styles = makeStyles(colors);
   const userFingerprint = useAppStore((state) => state.userFingerprint);
 
+  const alreadyBlocked = result.evidence.some(
+    (e) => e.source === "user_list" && e.message.toLowerCase().includes("block")
+  );
+
   const [selectedVote, setSelectedVote] = useState<VoteOption | null>(null);
-  const [selectedList, setSelectedList] = useState<ListOption | null>(null);
+  const [isBlocked, setIsBlocked] = useState(alreadyBlocked);
 
   const voteMutation = useMutation({ mutationFn: submitVote });
-  const listMutation = useMutation({ mutationFn: updateCreatorList });
+  const blockMutation = useMutation({ mutationFn: updateCreatorList });
+  const unblockMutation = useMutation({ mutationFn: removeCreatorFromList });
 
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
         <Pressable
           onPress={() => navigation.goBack()}
-          style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
+          style={({ pressed }) => ({
+            opacity: pressed ? 0.5 : 1,
+            marginRight: 1,
+            width: 32,
+            height: 32,
+            alignItems: "center",
+            justifyContent: "center",
+          })}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
-          <Ionicons name="checkmark" size={26} color={colors.primary} />
+          <Ionicons name="checkmark-sharp" size={22} color={colors.primary} style={{ transform: [{ translateX: 1 }] }} />
         </Pressable>
       ),
     });
@@ -45,10 +56,13 @@ export function ResultScreen({ route, navigation }: Props) {
     voteMutation.mutate({ contentId: result.contentId, userFingerprint, vote });
   };
 
-  const handleList = (listType: ListOption) => {
-    setSelectedList(listType);
-    if (listType !== "unsure") {
-      listMutation.mutate({ creatorId: result.creatorId, userFingerprint, listType });
+  const handleBlockToggle = () => {
+    if (isBlocked) {
+      setIsBlocked(false);
+      unblockMutation.mutate({ creatorId: result.creatorId, userFingerprint });
+    } else {
+      setIsBlocked(true);
+      blockMutation.mutate({ creatorId: result.creatorId, userFingerprint, listType: "block" });
     }
   };
 
@@ -62,51 +76,21 @@ export function ResultScreen({ route, navigation }: Props) {
         <Pressable
           style={({ pressed }) => [
             styles.creatorButton,
-            selectedList === "allow" && { borderColor: colors.success, backgroundColor: colors.successDim },
-            pressed && styles.buttonPressed,
-          ]}
-          android_ripple={{ color: "rgba(29,185,107,0.15)", borderless: false }}
-          onPress={() => handleList("allow")}
-        >
-          <Text style={[styles.creatorButtonText, selectedList === "allow" && { color: colors.success }]}>
-            Always Allow This Creator
-          </Text>
-          {selectedList === "allow" && <View style={[styles.selectedDot, { backgroundColor: colors.success }]} />}
-        </Pressable>
-
-        <Pressable
-          style={({ pressed }) => [
-            styles.creatorButton,
-            selectedList === "block" && { borderColor: colors.danger, backgroundColor: colors.dangerDim },
+            isBlocked && { borderColor: colors.danger, backgroundColor: colors.dangerDim },
             pressed && styles.buttonPressed,
           ]}
           android_ripple={{ color: "rgba(232,71,74,0.15)", borderless: false }}
-          onPress={() => handleList("block")}
+          onPress={handleBlockToggle}
         >
-          <Text style={[styles.creatorButtonText, selectedList === "block" && { color: colors.danger }]}>
-            Always Block This Creator
+          <Text style={[styles.creatorButtonText, isBlocked && { color: colors.danger }]}>
+            {isBlocked ? "Unblock This Creator" : "Block This Creator"}
           </Text>
-          {selectedList === "block" && <View style={[styles.selectedDot, { backgroundColor: colors.danger }]} />}
-        </Pressable>
-
-        <Pressable
-          style={({ pressed }) => [
-            styles.creatorButton,
-            selectedList === "unsure" && { borderColor: colors.subtext, backgroundColor: colors.panelBorder },
-            pressed && styles.buttonPressed,
-          ]}
-          android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
-          onPress={() => handleList("unsure")}
-        >
-          <Text style={[styles.creatorButtonText, selectedList === "unsure" && { color: colors.subtext }]}>
-            Unsure
-          </Text>
-          {selectedList === "unsure" && <View style={[styles.selectedDot, { backgroundColor: colors.subtext }]} />}
+          {isBlocked && <View style={[styles.selectedDot, { backgroundColor: colors.danger }]} />}
         </Pressable>
 
       </View>
 
-      <View style={styles.section}>
+      {!isBlocked && <View style={styles.section}>
         <Text style={styles.sectionLabel}>Improve the model</Text>
         <View style={styles.voteRow}>
 
@@ -159,7 +143,7 @@ export function ResultScreen({ route, navigation }: Props) {
           </Pressable>
 
         </View>
-      </View>
+      </View>}
 
     </ScrollView>
   );
