@@ -18,8 +18,12 @@ export function makeScanKey(contentId: string, scannedAt: string) {
   return `${contentId}::${scannedAt}`;
 }
 
+// We only gate creator-bias re-training within a single app runtime.
+// This matches the UX expectation that after restart, prior "seen content" locks should not block updates.
+const FEEDBACK_SESSION_SCOPE = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
 function makeCreatorContentKey(creatorId: string, contentId: string) {
-  return `${creatorId}::${contentId}`;
+  return `${creatorId}::${FEEDBACK_SESSION_SCOPE}::${contentId}`;
 }
 
 function parseCreatorNameFromUrl(url: string, platform: string) {
@@ -193,7 +197,8 @@ export const usePersonalizationStore = create<PersonalizationState>()(
       },
       recordFeedback: (result, vote) => {
         const state = get();
-        const predicted = predictedLabelFromScore(result.modelScore);
+        const rawModelScore = result.rawModelScore ?? result.modelScore;
+        const predicted = predictedLabelFromScore(rawModelScore);
         const contentId = result.contentId;
         const creatorId = result.creatorId;
         const creatorContentKey = makeCreatorContentKey(creatorId, contentId);
@@ -217,8 +222,10 @@ export const usePersonalizationStore = create<PersonalizationState>()(
           };
 
         const voteDirection = correctionDirection(predicted, vote);
+        const creatorBiasMissing = !(creatorId in state.creatorBias);
         const canApplyCreatorBiasForContent =
-          voteDirection !== 0 && !state.creatorBiasContentApplied[creatorContentKey];
+          voteDirection !== 0 &&
+          (!state.creatorBiasContentApplied[creatorContentKey] || creatorBiasMissing);
         const creatorDirectionDelta = canApplyCreatorBiasForContent ? voteDirection : 0;
 
         const nextBaseState = {
@@ -361,9 +368,19 @@ export const usePersonalizationStore = create<PersonalizationState>()(
         const state = get();
         const nextCreatorBias = { ...state.creatorBias };
         const nextCreatorNames = { ...state.creatorNames };
+        const nextCreatorBiasContentApplied = { ...state.creatorBiasContentApplied };
         delete nextCreatorBias[creatorId];
         delete nextCreatorNames[creatorId];
-        set({ creatorBias: nextCreatorBias, creatorNames: nextCreatorNames });
+        for (const key of Object.keys(nextCreatorBiasContentApplied)) {
+          if (key.startsWith(`${creatorId}::`)) {
+            delete nextCreatorBiasContentApplied[key];
+          }
+        }
+        set({
+          creatorBias: nextCreatorBias,
+          creatorNames: nextCreatorNames,
+          creatorBiasContentApplied: nextCreatorBiasContentApplied,
+        });
       },
       resetPersonalization: () =>
         set({

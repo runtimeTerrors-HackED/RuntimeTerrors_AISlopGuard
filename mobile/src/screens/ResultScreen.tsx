@@ -22,7 +22,6 @@ export function ResultScreen({ route, navigation }: Props) {
   const scanKey = makeScanKey(result.contentId, result.scannedAt);
   const recordFeedback = usePersonalizationStore((state) => state.recordFeedback);
   const captureScanContext = usePersonalizationStore((state) => state.captureScanContext);
-  const previousVote = usePersonalizationStore((state) => state.contentFeedback[result.contentId]);
   const appliedBiasSnapshot = usePersonalizationStore(
     (state) => state.contentBiasSnapshot[scanKey] ?? state.contentBiasSnapshot[result.contentId]
   );
@@ -31,7 +30,7 @@ export function ResultScreen({ route, navigation }: Props) {
     (e) => e.source === "user_list" && e.message.toLowerCase().includes("block")
   );
 
-  const [selectedVote, setSelectedVote] = useState<VoteOption | null>(previousVote ?? null);
+  const [selectedVote, setSelectedVote] = useState<VoteOption | null>(null);
   const [isBlocked, setIsBlocked] = useState(alreadyBlocked);
 
   const blockMutation = useMutation({ mutationFn: updateCreatorList });
@@ -110,7 +109,7 @@ export function ResultScreen({ route, navigation }: Props) {
               styles.voteButton,
               selectedVote === "ai"
                 ? { backgroundColor: colors.danger, borderColor: colors.danger }
-                : { backgroundColor: colors.dangerDim, borderColor: colors.danger + "35" },
+                : { backgroundColor: colors.panel, borderColor: colors.panelBorder },
               pressed && styles.buttonPressed,
             ]}
             android_ripple={{ color: "rgba(255,100,100,0.2)", borderless: false }}
@@ -126,7 +125,7 @@ export function ResultScreen({ route, navigation }: Props) {
               styles.voteButton,
               selectedVote === "not_ai"
                 ? { backgroundColor: colors.success, borderColor: colors.success }
-                : { backgroundColor: colors.successDim, borderColor: colors.success + "35" },
+                : { backgroundColor: colors.panel, borderColor: colors.panelBorder },
               pressed && styles.buttonPressed,
             ]}
             android_ripple={{ color: "rgba(100,255,150,0.2)", borderless: false }}
@@ -142,7 +141,7 @@ export function ResultScreen({ route, navigation }: Props) {
               styles.voteButton,
               selectedVote === "unsure"
                 ? { backgroundColor: colors.subtext, borderColor: colors.subtext }
-                : { borderColor: colors.panelBorder },
+                : { backgroundColor: colors.panel, borderColor: colors.panelBorder },
               pressed && styles.buttonPressed,
             ]}
             android_ripple={{ color: "rgba(255,255,255,0.1)", borderless: false }}
