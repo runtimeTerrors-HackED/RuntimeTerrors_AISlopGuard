@@ -13,22 +13,28 @@ function VerdictPill({ verdict, colors }: { verdict: ScanResponse["verdict"]; co
   const label = verdictLabel(verdict);
   return (
     <View style={[pillStyles.pill, { backgroundColor: color + "18", borderColor: color + "30" }]}>
-      <View style={[pillStyles.dot, { backgroundColor: color }]} />
-      <Text style={[pillStyles.text, { color }]}>{label}</Text>
+      <View style={pillStyles.inner}>
+        <View style={[pillStyles.dot, { backgroundColor: color }]} />
+        <Text style={[pillStyles.text, { color }]}>{label}</Text>
+      </View>
     </View>
   );
 }
 
 const pillStyles = StyleSheet.create({
   pill: {
-    flexDirection: "row",
-    alignItems: "center",
     alignSelf: "flex-start",
     borderWidth: 1,
-    borderRadius: 100,
+    borderRadius: 8,
+    transform: [{ skewX: "-12deg" }],
+  },
+  inner: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 6,
     gap: 7,
+    transform: [{ skewX: "12deg" }],
   },
   dot: {
     width: 6,
@@ -74,19 +80,21 @@ export function ScanResultCard({ result }: Props) {
         <>
           <VerdictPill verdict={result.verdict} colors={colors} />
           <View style={styles.statsRow}>
-            <View style={styles.stat}>
-              <Text style={styles.statValue}>{(result.finalScore * 100).toFixed(0)}%</Text>
-              <Text style={styles.statLabel}>AI Score</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.stat}>
-              <Text style={styles.statValue}>{confidenceLabel(result.confidenceBand)}</Text>
-              <Text style={styles.statLabel}>Confidence</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.stat}>
-              <Text style={styles.statValue}>{result.platform}</Text>
-              <Text style={styles.statLabel}>Platform</Text>
+            <View style={styles.statsRowContent}>
+              <View style={styles.stat}>
+                <Text style={styles.statValue}>{(result.finalScore * 100).toFixed(0)}%</Text>
+                <Text style={styles.statLabel}>AI Score</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.stat}>
+                <Text style={styles.statValue}>{confidenceLabel(result.confidenceBand)}</Text>
+                <Text style={styles.statLabel}>Confidence</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.stat}>
+                <Text style={styles.statValue}>{result.platform}</Text>
+                <Text style={styles.statLabel}>Platform</Text>
+              </View>
             </View>
           </View>
         </>
@@ -143,12 +151,17 @@ function makeStyles(colors: ThemeColors) {
       fontWeight: "600",
     },
     statsRow: {
-      flexDirection: "row",
       backgroundColor: colors.bg,
-      borderRadius: 10,
+      borderRadius: 8,
       borderWidth: 1,
       borderColor: colors.panelBorder,
+      transform: [{ skewX: "-10deg" }],
+      overflow: "hidden",
+    },
+    statsRowContent: {
+      flexDirection: "row",
       paddingVertical: 14,
+      transform: [{ skewX: "10deg" }],
     },
     stat: {
       flex: 1,

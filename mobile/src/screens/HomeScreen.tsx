@@ -142,6 +142,21 @@ export function HomeScreen({ navigation }: Props) {
             multiline={false}
           />
 
+          {/* Paste from clipboard button */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.pasteButton,
+              pressed && styles.buttonPressed,
+            ]}
+            android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
+            onPress={handlePasteFromClipboard}
+            accessibilityRole="button"
+            accessibilityLabel="Paste from clipboard"
+            accessibilityHint="Pastes text from your clipboard into the URL input"
+          >
+            <Text style={styles.pasteButtonText}>Paste from Clipboard</Text>
+          </Pressable>
+
           <View style={styles.switchRow}>
             <View>
               <Text style={styles.switchLabel}>Conservative mode</Text>
@@ -163,19 +178,7 @@ export function HomeScreen({ navigation }: Props) {
             </Text>
           ) : null}
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.pasteButton,
-              pressed && styles.buttonPressed,
-            ]}
-            android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
-            onPress={handlePasteFromClipboard}
-            accessibilityRole="button"
-            accessibilityLabel="Paste from clipboard"
-            accessibilityHint="Pastes text from your clipboard into the URL input"
-          >
-            <Text style={styles.pasteButtonText}>Paste from Clipboard</Text>
-          </Pressable>
+          
         </View>
 
         {/* Actions */}
@@ -183,7 +186,6 @@ export function HomeScreen({ navigation }: Props) {
           <Pressable
             style={({ pressed }) => [
               styles.scanButton,
-              canScan ? styles.scanButtonEnabled : styles.scanButtonDisabled,
               pressed && styles.buttonPressed,
             ]}
             android_ripple={{ color: "rgba(255,255,255,0.15)", borderless: false }}
@@ -193,27 +195,37 @@ export function HomeScreen({ navigation }: Props) {
             accessibilityHint="Runs AI-content detection for the pasted link"
             accessibilityState={{ disabled: !canScan, busy: scanMutation.isPending }}
           >
-            <View style={styles.scanButtonContent}>
-              {scanMutation.isPending ? (
-                <ActivityIndicator color={canScan ? colors.primary : colors.subtext} size="small" />
-              ) : (
-                <>
-                  <Ionicons
-                    name="sparkles-outline"
-                    size={16}
+            <View
+              style={[
+                styles.scanButtonFace,
+                canScan ? styles.scanButtonFaceEnabled : styles.scanButtonFaceDisabled,
+              ]}
+            >
+              <View style={styles.scanButtonContent}>
+                {scanMutation.isPending ? (
+                  <ActivityIndicator
                     color={canScan ? colors.primary : colors.subtext}
-                    style={styles.secondaryIcon}
+                    size="small"
                   />
-                  <Text
-                    style={[
-                      styles.scanButtonText,
-                      canScan ? styles.scanButtonTextEnabled : styles.scanButtonTextDisabled,
-                    ]}
-                  >
-                    Scan Content
-                  </Text>
-                </>
-              )}
+                ) : (
+                  <>
+                    <Ionicons
+                      name="sparkles-outline"
+                      size={16}
+                      color={canScan ? colors.primary : colors.subtext}
+                      style={styles.secondaryIcon}
+                    />
+                    <Text
+                      style={[
+                        styles.scanButtonText,
+                        canScan ? styles.scanButtonTextEnabled : styles.scanButtonTextDisabled,
+                      ]}
+                    >
+                      Scan Content
+                    </Text>
+                  </>
+                )}
+              </View>
             </View>
           </Pressable>
           {showScanHint ? (
@@ -232,7 +244,6 @@ export function HomeScreen({ navigation }: Props) {
             <Pressable
               style={({ pressed }) => [
                 styles.secondaryButton,
-                styles.historyButton,
                 pressed && styles.buttonPressed,
               ]}
               android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
@@ -241,22 +252,23 @@ export function HomeScreen({ navigation }: Props) {
               accessibilityLabel="View scan history"
               accessibilityHint="Opens your previous scans"
             >
-              <View style={styles.secondaryButtonContent}>
-                <Ionicons
-                  name="time-outline"
-                  size={16}
-                  color={colors.primary}
-                  style={styles.secondaryIcon}
-                />
-                <Text style={[styles.secondaryButtonText, styles.historyButtonText]}>
-                  History
-                </Text>
+              <View style={[styles.secondaryButtonFace, styles.historyButton]}>
+                <View style={styles.secondaryButtonContent}>
+                  <Ionicons
+                    name="time-outline"
+                    size={16}
+                    color={colors.primary}
+                    style={styles.secondaryIcon}
+                  />
+                  <Text style={[styles.secondaryButtonText, styles.historyButtonText]}>
+                    History
+                  </Text>
+                </View>
               </View>
             </Pressable>
             <Pressable
               style={({ pressed }) => [
                 styles.secondaryButton,
-                styles.blockedButton,
                 pressed && styles.buttonPressed,
               ]}
               android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
@@ -265,16 +277,18 @@ export function HomeScreen({ navigation }: Props) {
               accessibilityLabel="View blocked creators"
               accessibilityHint="Opens your blocked creators list"
             >
-              <View style={styles.secondaryButtonContent}>
-                <Ionicons
-                  name="shield-outline"
-                  size={16}
-                  color={BLOCKED_ACCENT}
-                  style={styles.secondaryIcon}
-                />
-                <Text style={[styles.secondaryButtonText, styles.blockedButtonText]}>
-                  Blocked
-                </Text>
+              <View style={[styles.secondaryButtonFace, styles.blockedButton]}>
+                <View style={styles.secondaryButtonContent}>
+                  <Ionicons
+                    name="shield-outline"
+                    size={16}
+                    color={BLOCKED_ACCENT}
+                    style={styles.secondaryIcon}
+                  />
+                  <Text style={[styles.secondaryButtonText, styles.blockedButtonText]}>
+                    Blocked
+                  </Text>
+                </View>
               </View>
             </Pressable>
           </View>
@@ -380,22 +394,29 @@ function makeStyles(colors: ThemeColors) {
       // marginTop: "auto",
     },
     scanButton: {
+      alignItems: "stretch",
+      justifyContent: "center",
+    },
+    scanButtonFace: {
       borderWidth: 1,
       borderColor: colors.panelBorder,
-      borderRadius: 12,
+      borderRadius: 6,
       alignItems: "center",
       justifyContent: "center",
+      transform: [{ skewX: "-16deg" }],
     },
     scanButtonContent: {
       flexDirection: "row",
       alignItems: "center",
       paddingVertical: 16,
+      paddingHorizontal: 16,
+      transform: [{ skewX: "16deg" }],
     },
-    scanButtonEnabled: {
+    scanButtonFaceEnabled: {
       borderColor: colors.primary + "66",
       backgroundColor: colors.primaryDim,
     },
-    scanButtonDisabled: {
+    scanButtonFaceDisabled: {
       backgroundColor: colors.panel,
     },
     scanButtonTextEnabled: {
@@ -428,16 +449,21 @@ function makeStyles(colors: ThemeColors) {
     },
     secondaryButton: {
       flex: 1,
+    },
+    secondaryButtonFace: {
       backgroundColor: colors.panel,
       borderWidth: 1,
       borderColor: colors.panelBorder,
       paddingVertical: 14,
-      borderRadius: 12,
+      borderRadius: 6,
       alignItems: "center",
+      transform: [{ skewX: "-12deg" }],
     },
     secondaryButtonContent: {
       flexDirection: "row",
       alignItems: "center",
+      paddingHorizontal: 12,
+      transform: [{ skewX: "12deg" }],
     },
     secondaryIcon: {
       marginRight: 6,

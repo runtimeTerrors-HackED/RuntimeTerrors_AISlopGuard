@@ -69,22 +69,26 @@ export function BlacklistScreen() {
 
       {blacklistQuery.data?.map((item) => (
         <View key={item.creatorId} style={styles.row}>
-          <View style={styles.rowInfo}>
-            <Text style={styles.rowLabel}>Creator</Text>
-            <Text style={styles.rowId} numberOfLines={1}>{item.creatorId}</Text>
+          <View style={styles.rowFace}>
+            <View style={styles.rowContent}>
+              <View style={styles.rowInfo}>
+                <Text style={styles.rowLabel}>Creator</Text>
+                <Text style={styles.rowId} numberOfLines={1}>{item.creatorId}</Text>
+              </View>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.unblockButton,
+                  pressed && styles.buttonPressed,
+                  unblockMutation.isPending && styles.buttonDisabled,
+                ]}
+                android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
+                onPress={() => unblockMutation.mutate({ userFingerprint, creatorId: item.creatorId })}
+                disabled={unblockMutation.isPending}
+              >
+                <Text style={styles.unblockText}>Unblock</Text>
+              </Pressable>
+            </View>
           </View>
-          <Pressable
-            style={({ pressed }) => [
-              styles.unblockButton,
-              pressed && styles.buttonPressed,
-              unblockMutation.isPending && styles.buttonDisabled,
-            ]}
-            android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
-            onPress={() => unblockMutation.mutate({ userFingerprint, creatorId: item.creatorId })}
-            disabled={unblockMutation.isPending}
-          >
-            <Text style={styles.unblockText}>Unblock</Text>
-          </Pressable>
         </View>
       ))}
     </ScrollView>
@@ -128,10 +132,18 @@ function makeStyles(colors: ThemeColors) {
       textAlign: "center",
     },
     row: {
+      paddingHorizontal: 2,
+    },
+    rowFace: {
       backgroundColor: colors.panel,
       borderWidth: 1,
       borderColor: colors.panelBorder,
-      borderRadius: 14,
+      borderRadius: 8,
+      transform: [{ skewX: "-10deg" }],
+      overflow: "hidden",
+    },
+    rowContent: {
+      transform: [{ skewX: "10deg" }],
       padding: 14,
       flexDirection: "row",
       alignItems: "center",

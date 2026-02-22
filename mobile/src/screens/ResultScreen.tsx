@@ -87,7 +87,6 @@ export function ResultScreen({ route, navigation }: Props) {
           </Text>
           {isBlocked && <View style={[styles.selectedDot, { backgroundColor: colors.danger }]} />}
         </Pressable>
-
       </View>
 
       {!isBlocked && <View style={styles.section}>
@@ -141,7 +140,6 @@ export function ResultScreen({ route, navigation }: Props) {
               Unsure
             </Text>
           </Pressable>
-
         </View>
       </View>}
 
