@@ -35,10 +35,17 @@ export function ResultScreen({ route, navigation }: Props) {
       headerRight: () => (
         <Pressable
           onPress={() => navigation.goBack()}
-          style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, marginRight: 1 })}
+          style={({ pressed }) => ({
+            opacity: pressed ? 0.5 : 1,
+            marginRight: 1,
+            width: 32,
+            height: 32,
+            alignItems: "center",
+            justifyContent: "center",
+          })}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
-          <Ionicons name="checkmark-sharp" size={22} color={colors.primary} />
+          <Ionicons name="checkmark-sharp" size={22} color={colors.primary} style={{ transform: [{ translateX: 1 }] }} />
         </Pressable>
       ),
     });
