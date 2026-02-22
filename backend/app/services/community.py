@@ -68,78 +68,81 @@ def get_community_signal(content_id: str) -> CommunitySignal:
                 inWarnList = True
 
 
-    votes = store.get_votes_for_content(content_id)
-    if not votes:
+
         if inBlockList:
             return CommunitySignal(
                 score=1.0,
-                message="No community votes yet, but channel is in blocklist.",
+                message="Community score 1.0 (high). Channel is in public blocklist.",
                 strength="high",
                 has_votes=False,
             )
         elif inWarnList:
             return CommunitySignal(
-                score=0.5,
-                message="No community votes yet, but channel is in warnlist.",
-                strength="high",
+                score=0.75,
+                message="Community score 0.75 (medium). Channel is in public warnlist.",
+                strength="medium",
                 has_votes=False,
             )
         else:
             return CommunitySignal(
                 score=0.5,
-                message="No community votes yet.",
+                message="Community score 0.5 (low).",
                 strength="low",
                 has_votes=False,
             )
 
-    ai_weight = sum(v.weight for v in votes if v.vote == "ai")
-    not_ai_weight = sum(v.weight for v in votes if v.vote == "not_ai")
-    unsure_weight = sum(v.weight for v in votes if v.vote == "unsure")
-    total = ai_weight + not_ai_weight + unsure_weight
 
-    if total == 0:
-        return CommunitySignal(
-            score=0.5,
-            message="Community votes exist, but no weighted signal available yet.",
-            strength="low",
-            has_votes=True,
-        )
+    # The following commented code can be removed, as votes should affect model and not community score
+    # votes = store.get_votes_for_content(content_id)
 
-    score = (ai_weight + 0.5 * unsure_weight) / total
-    print(score)
-    if inBlockList:
-        score += 0.35
-    elif inWarnList:
-        score += 0.1
-    strength = "high" if total >= 10 else "medium" if total >= 4 else "low"
+    # ai_weight = sum(v.weight for v in votes if v.vote == "ai")
+    # not_ai_weight = sum(v.weight for v in votes if v.vote == "not_ai")
+    # unsure_weight = sum(v.weight for v in votes if v.vote == "unsure")
+    # total = ai_weight + not_ai_weight + unsure_weight
 
-    if inBlockList:
-        return CommunitySignal(
-            score=score,
-            message=(
-                f"Community weighted votes -> ai: {ai_weight:.1f}, "
-                f"not_ai: {not_ai_weight:.1f}, unsure: {unsure_weight:.1f}, channel is in blocklist."
-            ),
-            strength=strength,
-            has_votes=True,
-        )
-    elif inWarnList:
-        return CommunitySignal(
-            score=score,
-            message=(
-                f"Community weighted votes -> ai: {ai_weight:.1f}, "
-                f"not_ai: {not_ai_weight:.1f}, unsure: {unsure_weight:.1f}, channel is in warnlist."
-            ),
-            strength=strength,
-            has_votes=True,
-        )
-    else:
-        return CommunitySignal(
-            score=score,
-            message=(
-                f"Community weighted votes -> ai: {ai_weight:.1f}, "
-                f"not_ai: {not_ai_weight:.1f}, unsure: {unsure_weight:.1f}"
-            ),
-            strength=strength,
-            has_votes=True,
-        )
+    # if total == 0:
+    #     return CommunitySignal(
+    #         score=0.5,
+    #         message="Community votes exist, but no weighted signal available yet.",
+    #         strength="low",
+    #         has_votes=True,
+    #     )
+
+    # score = (ai_weight + 0.5 * unsure_weight) / total
+    # print(score)
+    # if inBlockList:
+    #     score += 0.35
+    # elif inWarnList:
+    #     score += 0.1
+    # strength = "high" if total >= 10 else "medium" if total >= 4 else "low"
+
+    # if inBlockList:
+    #     return CommunitySignal(
+    #         score=score,
+    #         message=(
+    #             f"Community weighted votes -> ai: {ai_weight:.1f}, "
+    #             f"not_ai: {not_ai_weight:.1f}, unsure: {unsure_weight:.1f}, channel is in blocklist."
+    #         ),
+    #         strength=strength,
+    #         has_votes=True,
+    #     )
+    # elif inWarnList:
+    #     return CommunitySignal(
+    #         score=score,
+    #         message=(
+    #             f"Community weighted votes -> ai: {ai_weight:.1f}, "
+    #             f"not_ai: {not_ai_weight:.1f}, unsure: {unsure_weight:.1f}, channel is in warnlist."
+    #         ),
+    #         strength=strength,
+    #         has_votes=True,
+    #     )
+    # else:
+    #     return CommunitySignal(
+    #         score=score,
+    #         message=(
+    #             f"Community weighted votes -> ai: {ai_weight:.1f}, "
+    #             f"not_ai: {not_ai_weight:.1f}, unsure: {unsure_weight:.1f}"
+    #         ),
+    #         strength=strength,
+    #         has_votes=True,
+    #     )
