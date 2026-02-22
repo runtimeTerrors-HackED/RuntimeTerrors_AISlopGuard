@@ -1,5 +1,6 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { BlacklistScreen } from "../screens/BlacklistScreen";
+import { CreatorBiasesScreen } from "../screens/CreatorBiasesScreen";
 import { HistoryScreen } from "../screens/HistoryScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { ResultScreen } from "../screens/ResultScreen";
@@ -34,6 +35,11 @@ export function RootNavigator() {
       <Stack.Screen name="Result" component={ResultScreen} options={{ title: "Scan Result" }} />
       <Stack.Screen name="History" component={HistoryScreen} options={{ title: "History" }} />
       <Stack.Screen name="Blacklist" component={BlacklistScreen} options={{ title: "Blocked Creators" }} />
+      <Stack.Screen
+        name="CreatorBiases"
+        component={CreatorBiasesScreen}
+        options={{ title: "Creator Biases" }}
+      />
     </Stack.Navigator>
   );
 }

@@ -19,6 +19,7 @@ import { scanContent } from "../api/scan";
 import { useResolvedThemeMode, useTheme } from "../hooks/useTheme";
 import { ThemeColors } from "../constants/theme";
 import { useAppStore } from "../store/appStore";
+import { usePersonalizationStore } from "../store/personalizationStore";
 import { RootStackParamList } from "../navigation/types";
 import AppLogo from "../../assets/AISlopGuard-logo.svg";
 
@@ -35,10 +36,16 @@ export function HomeScreen({ navigation }: Props) {
   const conservativeMode = useAppStore((state) => state.conservativeMode);
   const setConservativeMode = useAppStore((state) => state.setConservativeMode);
   const setThemeMode = useAppStore((state) => state.setThemeMode);
+  const applyPersonalization = usePersonalizationStore((state) => state.applyPersonalization);
+  const captureScanContext = usePersonalizationStore((state) => state.captureScanContext);
 
   const scanMutation = useMutation({
     mutationFn: scanContent,
-    onSuccess: (result) => navigation.navigate("Result", { result }),
+    onSuccess: (result, variables) => {
+      const personalizedResult = applyPersonalization(result, variables.conservativeMode);
+      captureScanContext(personalizedResult, variables.url);
+      navigation.navigate("Result", { result: personalizedResult, contentUrl: variables.url });
+    },
   });
 
   useFocusEffect(
@@ -49,7 +56,8 @@ export function HomeScreen({ navigation }: Props) {
     }, [])
   );
 
-  const canScan = !!url.trim() && !scanMutation.isPending;
+  const trimmedUrl = url.trim();
+  const canScan = !!trimmedUrl && !scanMutation.isPending;
 
   const handlePasteFromClipboard = async () => {
     const clipboardText = await Clipboard.getStringAsync();
@@ -190,6 +198,7 @@ export function HomeScreen({ navigation }: Props) {
             ]}
             android_ripple={{ color: "rgba(255,255,255,0.15)", borderless: false }}
             onPress={handleScanPress}
+            disabled={!canScan}
             accessibilityRole="button"
             accessibilityLabel="Scan content"
             accessibilityHint="Runs AI-content detection for the pasted link"
@@ -240,56 +249,41 @@ export function HomeScreen({ navigation }: Props) {
             </View>
           ) : null}
 
-          <View style={styles.secondaryRow}>
+          <View style={styles.secondaryStack}>
+            <View style={styles.secondaryRow}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.secondaryButton,
+                  pressed && styles.buttonPressed,
+                ]}
+                android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
+                onPress={() => navigation.navigate("History")}
+              >
+                <Text style={styles.secondaryButtonText}>History</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.secondaryButton,
+                  pressed && styles.buttonPressed,
+                ]}
+                android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
+                onPress={() => navigation.navigate("Blacklist")}
+              >
+                <Text style={styles.secondaryButtonText}>Blocked</Text>
+              </Pressable>
+            </View>
             <Pressable
               style={({ pressed }) => [
                 styles.secondaryButton,
                 pressed && styles.buttonPressed,
               ]}
               android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
-              onPress={() => navigation.navigate("History")}
+              onPress={() => navigation.navigate("CreatorBiases")}
               accessibilityRole="button"
-              accessibilityLabel="View scan history"
-              accessibilityHint="Opens your previous scans"
+              accessibilityLabel="View creator bias settings"
+              accessibilityHint="Opens creator-specific personalization"
             >
-              <View style={[styles.secondaryButtonFace, styles.historyButton]}>
-                <View style={styles.secondaryButtonContent}>
-                  <Ionicons
-                    name="time-outline"
-                    size={16}
-                    color={colors.primary}
-                    style={styles.secondaryIcon}
-                  />
-                  <Text style={[styles.secondaryButtonText, styles.historyButtonText]}>
-                    History
-                  </Text>
-                </View>
-              </View>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [
-                styles.secondaryButton,
-                pressed && styles.buttonPressed,
-              ]}
-              android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
-              onPress={() => navigation.navigate("Blacklist")}
-              accessibilityRole="button"
-              accessibilityLabel="View blocked creators"
-              accessibilityHint="Opens your blocked creators list"
-            >
-              <View style={[styles.secondaryButtonFace, styles.blockedButton]}>
-                <View style={styles.secondaryButtonContent}>
-                  <Ionicons
-                    name="shield-outline"
-                    size={16}
-                    color={BLOCKED_ACCENT}
-                    style={styles.secondaryIcon}
-                  />
-                  <Text style={[styles.secondaryButtonText, styles.blockedButtonText]}>
-                    Blocked
-                  </Text>
-                </View>
-              </View>
+              <Text style={styles.secondaryButtonText}>Creator Biases</Text>
             </Pressable>
           </View>
         </View>
@@ -445,6 +439,9 @@ function makeStyles(colors: ThemeColors) {
     },
     secondaryRow: {
       flexDirection: "row",
+      gap: 10,
+    },
+    secondaryStack: {
       gap: 10,
     },
     secondaryButton: {

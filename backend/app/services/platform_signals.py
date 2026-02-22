@@ -16,6 +16,21 @@ class PlatformSignal:
     strength: SignalStrength
 
 
+
+def _channel_id_to_handle(channel_id, api_key):
+    r = requests.get(
+        "https://www.googleapis.com/youtube/v3/channels",
+        params={
+            "part": "snippet",
+            "id": channel_id,
+            "key": api_key
+        }
+    )
+    data = r.json()
+    if not data.get("items"):
+        return None
+    return data["items"][0]["snippet"].get("customUrl")
+
 def _youtube_synthetic_signal(video_id: str) -> PlatformSignal:
     if not settings.youtube_api_key:
         return PlatformSignal(
@@ -25,7 +40,7 @@ def _youtube_synthetic_signal(video_id: str) -> PlatformSignal:
         )
 
     endpoint = "https://www.googleapis.com/youtube/v3/videos"
-    params = {"part": "status", "id": video_id, "key": settings.youtube_api_key}
+    params = {"part": "status,snippet", "id": video_id, "key": settings.youtube_api_key}
 
     try:
         response = requests.get(endpoint, params=params, timeout=5)
@@ -45,6 +60,10 @@ def _youtube_synthetic_signal(video_id: str) -> PlatformSignal:
             message="No YouTube metadata found for this content.",
             strength="low",
         )
+
+    snip = items[0].get("snippet", {})
+    channelId = snip['channelId']
+    handle = _channel_id_to_handle(channelId, settings.youtube_api_key)
 
     status = items[0].get("status", {})
     contains_synthetic = status.get("containsSyntheticMedia")

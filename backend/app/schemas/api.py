@@ -27,12 +27,15 @@ class ScanResponse(BaseModel):
     platform: str
     canonicalId: str
     creatorId: str
+    creatorName: str | None = None
+    contentUrl: str | None = None
     verdict: Verdict
     finalScore: float
     confidenceBand: ConfidenceBand
     platformScore: float
     communityScore: float
     modelScore: float
+    rawModelScore: float | None = None
     evidence: list[EvidenceItem]
     scannedAt: datetime
 
