@@ -65,26 +65,6 @@ def _youtube_synthetic_signal(video_id: str) -> PlatformSignal:
     channelId = snip['channelId']
     handle = _channel_id_to_handle(channelId, settings.youtube_api_key)
 
-    blocklist = requests.get("https://raw.githubusercontent.com/Override92/AiSList/refs/heads/main/AiSList/aislist_blocklist.txt")
-    blocklist_parser = [i.lower() for i in blocklist.text.splitlines()]
-
-    if handle in blocklist_parser:
-        return PlatformSignal(
-            score=1.0,
-            message="Channel is in public blocklist.",
-            strength="high",
-        )
-
-    warnlist = requests.get("https://raw.githubusercontent.com/Override92/AiSList/refs/heads/main/AiSList/aislist_warnlist.txt")
-    warnlist_parser = [i.lower() for i in warnlist.text.splitlines()]
-
-    if handle in warnlist_parser:
-        return PlatformSignal(
-            score=0.5,
-            message="Channel is in public warnlist.",
-            strength="high",
-        )
-
     status = items[0].get("status", {})
     contains_synthetic = status.get("containsSyntheticMedia")
     if contains_synthetic is True:
