@@ -76,7 +76,7 @@ type PersonalizationState = {
   resetPersonalization: () => void;
 };
 
-const GLOBAL_STEP = 0.02;
+const GLOBAL_STEP = 0.005;
 const CREATOR_STEP = 0.1;
 const GLOBAL_MIN = -1;
 const GLOBAL_MAX = 1;
