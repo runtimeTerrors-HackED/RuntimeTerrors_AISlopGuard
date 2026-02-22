@@ -11,10 +11,8 @@ def decide_verdict(
     conservative_mode: bool = True,
     low_signal_mode: bool = False,
 ) -> tuple[Verdict, ConfidenceBand]:
-    likely_ai_threshold = 0.75 if conservative_mode else 0.70
-    # In low-signal mode (platform unavailable + no community votes), keep AI threshold
-    # strict but widen the unclear band, since model is the only meaningful signal.
-    unclear_threshold = 0.55 if conservative_mode else 0.50
+    likely_ai_threshold = 0.70 if conservative_mode else 0.75
+    unclear_threshold = 0.50 if conservative_mode else 0.55
 
     if final_score >= likely_ai_threshold:
         return "likely_ai", "high"

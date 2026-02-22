@@ -116,23 +116,12 @@ function extractBiasSnapshotFromEvidence(result: ScanResponse): BiasSnapshot | n
   return { global, creator };
 }
 
-function isLowSignalMode(result: ScanResponse) {
-  const platformUnavailable =
-    result.platformScore === 0.5 &&
-    result.evidence.some((item) => item.source === "platform" && item.strength === "low");
-  const noCommunityVotes = result.evidence.some(
-    (item) => item.source === "community" && item.message.toLowerCase().includes("no community votes yet")
-  );
-  return platformUnavailable && noCommunityVotes;
-}
-
 function decideVerdict(
   finalScore: number,
-  conservativeMode: boolean,
-  lowSignalMode: boolean
+  conservativeMode: boolean
 ): { verdict: Verdict; confidenceBand: ConfidenceBand } {
-  const likelyAiThreshold = conservativeMode ? 0.85 : 0.8;
-  const unclearThreshold = lowSignalMode ? 0.45 : conservativeMode ? 0.6 : 0.55;
+  const likelyAiThreshold = conservativeMode ? 0.7 : 0.75;
+  const unclearThreshold = conservativeMode ? 0.5 : 0.55;
 
   if (finalScore >= likelyAiThreshold) {
     return { verdict: "likely_ai", confidenceBand: "high" };
@@ -331,8 +320,7 @@ export const usePersonalizationStore = create<PersonalizationState>()(
         );
         const { verdict, confidenceBand } = decideVerdict(
           adjustedFinalScore,
-          conservativeMode,
-          isLowSignalMode(result)
+          conservativeMode
         );
 
         const nextEvidence = filteredEvidence.map((item) => {
