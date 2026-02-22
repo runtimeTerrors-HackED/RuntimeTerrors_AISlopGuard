@@ -1,17 +1,17 @@
-import { useColorScheme } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { BlacklistScreen } from "../screens/BlacklistScreen";
 import { HistoryScreen } from "../screens/HistoryScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { ResultScreen } from "../screens/ResultScreen";
 import { darkColors, lightColors } from "../constants/theme";
+import { useResolvedThemeMode } from "../hooks/useTheme";
 import { RootStackParamList } from "./types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
-  const scheme = useColorScheme();
-  const colors = scheme === "light" ? lightColors : darkColors;
+  const mode = useResolvedThemeMode();
+  const colors = mode === "light" ? lightColors : darkColors;
 
   return (
     <Stack.Navigator
@@ -30,7 +30,7 @@ export function RootNavigator() {
         contentStyle: { backgroundColor: colors.bg },
       }}
     >
-      <Stack.Screen name="Home" component={HomeScreen} options={{ title: "AISlopGuard" }} />
+      <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Result" component={ResultScreen} options={{ title: "Scan Result" }} />
       <Stack.Screen name="History" component={HistoryScreen} options={{ title: "History" }} />
       <Stack.Screen name="Blacklist" component={BlacklistScreen} options={{ title: "Blocked Creators" }} />

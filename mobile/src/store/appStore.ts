@@ -6,6 +6,8 @@ type AppState = {
   userFingerprint: string;
   conservativeMode: boolean;
   setConservativeMode: (enabled: boolean) => void;
+  themeMode: "system" | "light" | "dark";
+  setThemeMode: (mode: "system" | "light" | "dark") => void;
 };
 
 function createUserFingerprint() {
@@ -18,6 +20,8 @@ export const useAppStore = create<AppState>()(
       userFingerprint: createUserFingerprint(),
       conservativeMode: true,
       setConservativeMode: (enabled) => set({ conservativeMode: enabled }),
+      themeMode: "system",
+      setThemeMode: (mode) => set({ themeMode: mode }),
     }),
     {
       name: "ai-content-guardian",
