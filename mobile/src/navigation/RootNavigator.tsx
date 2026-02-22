@@ -30,7 +30,7 @@ export function RootNavigator() {
         contentStyle: { backgroundColor: colors.bg },
       }}
     >
-      <Stack.Screen name="Home" component={HomeScreen} options={{ title: "SlopGuard" }} />
+      <Stack.Screen name="Home" component={HomeScreen} options={{ title: "AISlopGuard" }} />
       <Stack.Screen name="Result" component={ResultScreen} options={{ title: "Scan Result" }} />
       <Stack.Screen name="History" component={HistoryScreen} options={{ title: "History" }} />
       <Stack.Screen name="Blacklist" component={BlacklistScreen} options={{ title: "Blocked Creators" }} />

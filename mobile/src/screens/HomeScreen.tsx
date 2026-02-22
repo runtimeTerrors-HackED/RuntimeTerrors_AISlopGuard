@@ -18,6 +18,7 @@ import { useTheme } from "../hooks/useTheme";
 import { ThemeColors } from "../constants/theme";
 import { useAppStore } from "../store/appStore";
 import { RootStackParamList } from "../navigation/types";
+import AppLogo from "../../assets/AISlopGuard-logo.svg";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Home">;
 
@@ -52,10 +53,7 @@ export function HomeScreen({ navigation }: Props) {
 
         {/* Brand */}
         <View style={styles.brand}>
-          <View style={styles.logoMark}>
-            <View style={styles.logoInner} />
-          </View>
-          <Text style={styles.appName}>SlopGuard</Text>
+          <AppLogo width={199} height={72} style={styles.logoSvg} />
           <Text style={styles.tagline}>
             Detect AI-generated videos and images{"\n"}from any social media link.
           </Text>
@@ -162,29 +160,8 @@ function makeStyles(colors: ThemeColors) {
       gap: 10,
       paddingBottom: 4,
     },
-    logoMark: {
-      width: 44,
-      height: 44,
-      borderRadius: 12,
-      backgroundColor: colors.primaryDim,
-      borderWidth: 1,
-      borderColor: colors.primary + "40",
-      alignItems: "center",
-      justifyContent: "center",
+    logoSvg: {
       marginBottom: 4,
-    },
-    logoInner: {
-      width: 18,
-      height: 18,
-      borderRadius: 5,
-      backgroundColor: colors.primary,
-      opacity: 0.9,
-    },
-    appName: {
-      color: colors.text,
-      fontSize: 34,
-      fontWeight: "700",
-      letterSpacing: -0.8,
     },
     tagline: {
       color: colors.subtext,
