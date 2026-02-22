@@ -22,7 +22,7 @@ def get_community_signal(content_id: str) -> CommunitySignal:
     votes = store.get_votes_for_content(content_id)
     if not votes:
         return CommunitySignal(
-            score=0,
+            score=0.5,
             message="No community votes yet.",
             strength="low",
             has_votes=False,
