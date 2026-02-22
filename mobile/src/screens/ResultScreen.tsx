@@ -1,23 +1,30 @@
 import { useMutation } from "@tanstack/react-query";
-import { useState, useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { submitVote, updateCreatorList, removeCreatorFromList } from "../api/scan";
+import { updateCreatorList, removeCreatorFromList } from "../api/scan";
 import { ScanResultCard } from "../components/ScanResultCard";
 import { useTheme } from "../hooks/useTheme";
 import { ThemeColors } from "../constants/theme";
 import { RootStackParamList } from "../navigation/types";
 import { useAppStore } from "../store/appStore";
+import { makeScanKey, usePersonalizationStore } from "../store/personalizationStore";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Result">;
 type VoteOption = "ai" | "not_ai" | "unsure";
 
 export function ResultScreen({ route, navigation }: Props) {
-  const { result } = route.params;
+  const { result, contentUrl } = route.params;
   const colors = useTheme();
   const styles = makeStyles(colors);
   const userFingerprint = useAppStore((state) => state.userFingerprint);
+  const scanKey = makeScanKey(result.contentId, result.scannedAt);
+  const recordFeedback = usePersonalizationStore((state) => state.recordFeedback);
+  const captureScanContext = usePersonalizationStore((state) => state.captureScanContext);
+  const appliedBiasSnapshot = usePersonalizationStore(
+    (state) => state.contentBiasSnapshot[scanKey] ?? state.contentBiasSnapshot[result.contentId]
+  );
 
   const alreadyBlocked = result.evidence.some(
     (e) => e.source === "user_list" && e.message.toLowerCase().includes("block")
@@ -26,7 +33,6 @@ export function ResultScreen({ route, navigation }: Props) {
   const [selectedVote, setSelectedVote] = useState<VoteOption | null>(null);
   const [isBlocked, setIsBlocked] = useState(alreadyBlocked);
 
-  const voteMutation = useMutation({ mutationFn: submitVote });
   const blockMutation = useMutation({ mutationFn: updateCreatorList });
   const unblockMutation = useMutation({ mutationFn: removeCreatorFromList });
 
@@ -51,9 +57,13 @@ export function ResultScreen({ route, navigation }: Props) {
     });
   }, [navigation, colors]);
 
+  useEffect(() => {
+    captureScanContext(result, contentUrl ?? result.contentUrl ?? undefined);
+  }, [captureScanContext, contentUrl, result]);
+
   const handleVote = (vote: VoteOption) => {
     setSelectedVote(vote);
-    voteMutation.mutate({ contentId: result.contentId, userFingerprint, vote });
+    recordFeedback(result, vote);
   };
 
   const handleBlockToggle = () => {
@@ -68,7 +78,7 @@ export function ResultScreen({ route, navigation }: Props) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <ScanResultCard result={result} />
+      <ScanResultCard result={result} appliedBiasSnapshot={appliedBiasSnapshot} />
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Creator</Text>
@@ -91,7 +101,7 @@ export function ResultScreen({ route, navigation }: Props) {
       </View>
 
       {!isBlocked && <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Improve the model</Text>
+        <Text style={styles.sectionLabel}>Improve the model - Only select an option if the model score is unexpected, not the final score</Text>
         <View style={styles.voteRow}>
 
           <Pressable
@@ -99,7 +109,7 @@ export function ResultScreen({ route, navigation }: Props) {
               styles.voteButton,
               selectedVote === "ai"
                 ? { backgroundColor: colors.danger, borderColor: colors.danger }
-                : { backgroundColor: colors.dangerDim, borderColor: colors.danger + "35" },
+                : { backgroundColor: colors.panel, borderColor: colors.panelBorder },
               pressed && styles.buttonPressed,
             ]}
             android_ripple={{ color: "rgba(255,100,100,0.2)", borderless: false }}
@@ -115,7 +125,7 @@ export function ResultScreen({ route, navigation }: Props) {
               styles.voteButton,
               selectedVote === "not_ai"
                 ? { backgroundColor: colors.success, borderColor: colors.success }
-                : { backgroundColor: colors.successDim, borderColor: colors.success + "35" },
+                : { backgroundColor: colors.panel, borderColor: colors.panelBorder },
               pressed && styles.buttonPressed,
             ]}
             android_ripple={{ color: "rgba(100,255,150,0.2)", borderless: false }}
@@ -131,7 +141,7 @@ export function ResultScreen({ route, navigation }: Props) {
               styles.voteButton,
               selectedVote === "unsure"
                 ? { backgroundColor: colors.subtext, borderColor: colors.subtext }
-                : { borderColor: colors.panelBorder },
+                : { backgroundColor: colors.panel, borderColor: colors.panelBorder },
               pressed && styles.buttonPressed,
             ]}
             android_ripple={{ color: "rgba(255,255,255,0.1)", borderless: false }}

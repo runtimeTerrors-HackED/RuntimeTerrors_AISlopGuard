@@ -5,11 +5,17 @@ import { ScanResultCard } from "../components/ScanResultCard";
 import { useTheme } from "../hooks/useTheme";
 import { ThemeColors } from "../constants/theme";
 import { useAppStore } from "../store/appStore";
+import { makeScanKey, usePersonalizationStore } from "../store/personalizationStore";
 
 export function HistoryScreen() {
   const colors = useTheme();
   const styles = makeStyles(colors);
   const userFingerprint = useAppStore((state) => state.userFingerprint);
+  const contentFeedback = usePersonalizationStore((state) => state.contentFeedback);
+  const scanFeedback = usePersonalizationStore((state) => state.scanFeedback);
+  const contentBiasSnapshot = usePersonalizationStore((state) => state.contentBiasSnapshot);
+  const scanModelScores = usePersonalizationStore((state) => state.scanModelScores);
+  const scanContentUrls = usePersonalizationStore((state) => state.scanContentUrls);
 
   const historyQuery = useQuery({
     queryKey: ["history", userFingerprint],
@@ -52,9 +58,27 @@ export function HistoryScreen() {
         </View>
       ) : null}
 
-      {historyQuery.data?.map((item) => (
-        <ScanResultCard key={item.contentId} result={item} />
-      ))}
+      {historyQuery.data?.map((item) => {
+        const scanKey = makeScanKey(item.contentId, item.scannedAt);
+        const vote = scanFeedback[scanKey] ?? contentFeedback[item.contentId];
+        const biasSnapshot = contentBiasSnapshot[scanKey] ?? contentBiasSnapshot[item.contentId];
+        const scoreSnapshot = scanModelScores[scanKey];
+        const contentUrl = scanContentUrls[scanKey] ?? item.contentUrl ?? undefined;
+
+        return (
+          <ScanResultCard
+            key={scanKey}
+            result={item}
+            historyMeta={{
+              vote,
+              biasSnapshot,
+              contentUrl,
+              rawModelScore: scoreSnapshot?.raw ?? item.rawModelScore ?? item.modelScore,
+              personalizedModelScore: scoreSnapshot?.personalized ?? item.modelScore,
+            }}
+          />
+        );
+      })}
     </ScrollView>
   );
 }

@@ -17,6 +17,7 @@ import { scanContent } from "../api/scan";
 import { useTheme } from "../hooks/useTheme";
 import { ThemeColors } from "../constants/theme";
 import { useAppStore } from "../store/appStore";
+import { usePersonalizationStore } from "../store/personalizationStore";
 import { RootStackParamList } from "../navigation/types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Home">;
@@ -28,10 +29,16 @@ export function HomeScreen({ navigation }: Props) {
   const userFingerprint = useAppStore((state) => state.userFingerprint);
   const conservativeMode = useAppStore((state) => state.conservativeMode);
   const setConservativeMode = useAppStore((state) => state.setConservativeMode);
+  const applyPersonalization = usePersonalizationStore((state) => state.applyPersonalization);
+  const captureScanContext = usePersonalizationStore((state) => state.captureScanContext);
 
   const scanMutation = useMutation({
     mutationFn: scanContent,
-    onSuccess: (result) => navigation.navigate("Result", { result }),
+    onSuccess: (result, variables) => {
+      const personalizedResult = applyPersonalization(result, variables.conservativeMode);
+      captureScanContext(personalizedResult, variables.url);
+      navigation.navigate("Result", { result: personalizedResult, contentUrl: variables.url });
+    },
   });
 
   useFocusEffect(
@@ -41,7 +48,8 @@ export function HomeScreen({ navigation }: Props) {
     }, [])
   );
 
-  const canScan = !!url.trim() && !scanMutation.isPending;
+  const trimmedUrl = url.trim();
+  const canScan = !!trimmedUrl && !scanMutation.isPending;
 
   return (
     <KeyboardAvoidingView
@@ -105,7 +113,7 @@ export function HomeScreen({ navigation }: Props) {
             ]}
             android_ripple={{ color: "rgba(255,255,255,0.15)", borderless: false }}
             onPress={() =>
-              scanMutation.mutate({ url, userFingerprint, conservativeMode })
+              scanMutation.mutate({ url: trimmedUrl, userFingerprint, conservativeMode })
             }
             disabled={!canScan}
           >
@@ -116,26 +124,38 @@ export function HomeScreen({ navigation }: Props) {
             )}
           </Pressable>
 
-          <View style={styles.secondaryRow}>
+          <View style={styles.secondaryStack}>
+            <View style={styles.secondaryRow}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.secondaryButton,
+                  pressed && styles.buttonPressed,
+                ]}
+                android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
+                onPress={() => navigation.navigate("History")}
+              >
+                <Text style={styles.secondaryButtonText}>History</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.secondaryButton,
+                  pressed && styles.buttonPressed,
+                ]}
+                android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
+                onPress={() => navigation.navigate("Blacklist")}
+              >
+                <Text style={styles.secondaryButtonText}>Blocked</Text>
+              </Pressable>
+            </View>
             <Pressable
               style={({ pressed }) => [
                 styles.secondaryButton,
                 pressed && styles.buttonPressed,
               ]}
               android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
-              onPress={() => navigation.navigate("History")}
+              onPress={() => navigation.navigate("CreatorBiases")}
             >
-              <Text style={styles.secondaryButtonText}>History</Text>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [
-                styles.secondaryButton,
-                pressed && styles.buttonPressed,
-              ]}
-              android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
-              onPress={() => navigation.navigate("Blacklist")}
-            >
-              <Text style={styles.secondaryButtonText}>Blocked</Text>
+              <Text style={styles.secondaryButtonText}>Creator Biases</Text>
             </Pressable>
           </View>
         </View>
@@ -253,6 +273,9 @@ function makeStyles(colors: ThemeColors) {
     },
     secondaryRow: {
       flexDirection: "row",
+      gap: 10,
+    },
+    secondaryStack: {
       gap: 10,
     },
     secondaryButton: {
