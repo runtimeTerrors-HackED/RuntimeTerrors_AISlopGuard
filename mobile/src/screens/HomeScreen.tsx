@@ -3,7 +3,6 @@ import { useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Clipboard from "expo-clipboard";
-import { LinearGradient } from "expo-linear-gradient";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -28,6 +27,7 @@ const BLOCKED_ACCENT = "#FFB000";
 
 export function HomeScreen({ navigation }: Props) {
   const [url, setUrl] = useState("");
+  const [showScanHint, setShowScanHint] = useState(false);
   const resolvedThemeMode = useResolvedThemeMode();
   const colors = useTheme();
   const styles = makeStyles(colors);
@@ -44,6 +44,7 @@ export function HomeScreen({ navigation }: Props) {
   useFocusEffect(
     useCallback(() => {
       setUrl("");
+      setShowScanHint(false);
       scanMutation.reset();
     }, [])
   );
@@ -56,10 +57,30 @@ export function HomeScreen({ navigation }: Props) {
       return;
     }
     setUrl(clipboardText.trim());
+    setShowScanHint(false);
   };
 
   const handleToggleTheme = () => {
     setThemeMode(resolvedThemeMode === "dark" ? "light" : "dark");
+  };
+
+  const handleUrlChange = (value: string) => {
+    setUrl(value);
+    if (value.trim()) {
+      setShowScanHint(false);
+    }
+  };
+
+  const handleScanPress = () => {
+    if (!url.trim()) {
+      setShowScanHint(true);
+      return;
+    }
+    if (scanMutation.isPending) {
+      return;
+    }
+    setShowScanHint(false);
+    scanMutation.mutate({ url, userFingerprint, conservativeMode });
   };
 
   return (
@@ -109,7 +130,7 @@ export function HomeScreen({ navigation }: Props) {
         <View style={styles.form}>
           <TextInput
             value={url}
-            onChangeText={setUrl}
+            onChangeText={handleUrlChange}
             placeholder="Paste a YouTube, Instagram or TikTok link..."
             placeholderTextColor={colors.placeholder}
             accessibilityLabel="Content URL input"
@@ -162,32 +183,50 @@ export function HomeScreen({ navigation }: Props) {
           <Pressable
             style={({ pressed }) => [
               styles.scanButton,
-              !canScan && styles.scanButtonDisabled,
-              pressed && canScan && styles.buttonPressed,
+              canScan ? styles.scanButtonEnabled : styles.scanButtonDisabled,
+              pressed && styles.buttonPressed,
             ]}
             android_ripple={{ color: "rgba(255,255,255,0.15)", borderless: false }}
-            onPress={() =>
-              scanMutation.mutate({ url, userFingerprint, conservativeMode })
-            }
-            disabled={!canScan}
+            onPress={handleScanPress}
             accessibilityRole="button"
             accessibilityLabel="Scan content"
             accessibilityHint="Runs AI-content detection for the pasted link"
             accessibilityState={{ disabled: !canScan, busy: scanMutation.isPending }}
           >
-            <LinearGradient
-              colors={["#7FA8FF", colors.primary]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.scanButtonGradient}
-            >
+            <View style={styles.scanButtonContent}>
               {scanMutation.isPending ? (
-                <ActivityIndicator color="#fff" size="small" />
+                <ActivityIndicator color={canScan ? colors.primary : colors.subtext} size="small" />
               ) : (
-                <Text style={styles.scanButtonText}>Scan Content</Text>
+                <>
+                  <Ionicons
+                    name="sparkles-outline"
+                    size={16}
+                    color={canScan ? colors.primary : colors.subtext}
+                    style={styles.secondaryIcon}
+                  />
+                  <Text
+                    style={[
+                      styles.scanButtonText,
+                      canScan ? styles.scanButtonTextEnabled : styles.scanButtonTextDisabled,
+                    ]}
+                  >
+                    Scan Content
+                  </Text>
+                </>
               )}
-            </LinearGradient>
+            </View>
           </Pressable>
+          {showScanHint ? (
+            <View style={styles.scanHintRow}>
+              <Ionicons
+                name="information-circle-outline"
+                size={14}
+                color={colors.subtext}
+                style={styles.scanHintIcon}
+              />
+              <Text style={styles.scanHintText}>Paste a link above to enable scanning.</Text>
+            </View>
+          ) : null}
 
           <View style={styles.secondaryRow}>
             <Pressable
@@ -341,28 +380,47 @@ function makeStyles(colors: ThemeColors) {
       // marginTop: "auto",
     },
     scanButton: {
+      borderWidth: 1,
+      borderColor: colors.panelBorder,
       borderRadius: 12,
-      overflow: "hidden",
-      shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.3,
-      shadowRadius: 14,
-      elevation: 5,
-    },
-    scanButtonGradient: {
       alignItems: "center",
       justifyContent: "center",
+    },
+    scanButtonContent: {
+      flexDirection: "row",
+      alignItems: "center",
       paddingVertical: 16,
     },
+    scanButtonEnabled: {
+      borderColor: colors.primary + "66",
+      backgroundColor: colors.primaryDim,
+    },
     scanButtonDisabled: {
-      opacity: 0.35,
-      shadowOpacity: 0,
+      backgroundColor: colors.panel,
+    },
+    scanButtonTextEnabled: {
+      color: colors.primary,
+    },
+    scanButtonTextDisabled: {
+      color: colors.subtext,
     },
     scanButtonText: {
-      color: "#fff",
       fontWeight: "600",
       fontSize: 15,
       letterSpacing: 0.1,
+    },
+    scanHintRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      alignSelf: "center",
+      marginTop: 2,
+    },
+    scanHintIcon: {
+      marginRight: 4,
+    },
+    scanHintText: {
+      color: colors.subtext,
+      fontSize: 12,
     },
     secondaryRow: {
       flexDirection: "row",
