@@ -1,5 +1,6 @@
 import { apiRequest } from "./client";
 import {
+  CreatorListEntry,
   ScanRequest,
   ScanResponse,
   UpdateListRequest,
@@ -32,4 +33,27 @@ export function updateCreatorList(payload: UpdateListRequest) {
 export function fetchHistory(userFingerprint: string) {
   const query = encodeURIComponent(userFingerprint);
   return apiRequest<ScanResponse[]>(`/api/history?userFingerprint=${query}`);
+}
+
+export function fetchCreatorList(
+  userFingerprint: string,
+  listType: "allow" | "block" | null = null
+) {
+  const params = new URLSearchParams({ userFingerprint });
+  if (listType) {
+    params.set("listType", listType);
+  }
+  return apiRequest<CreatorListEntry[]>(`/api/list?${params.toString()}`);
+}
+
+type RemoveCreatorListRequest = {
+  userFingerprint: string;
+  creatorId: string;
+};
+
+export function removeCreatorFromList(payload: RemoveCreatorListRequest) {
+  const params = new URLSearchParams(payload);
+  return apiRequest<UpdateListResponse>(`/api/list?${params.toString()}`, {
+    method: "DELETE",
+  });
 }

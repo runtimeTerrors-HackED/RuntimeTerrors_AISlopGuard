@@ -1,7 +1,12 @@
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import * as Clipboard from "expo-clipboard";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   StyleSheet,
   Switch,
@@ -11,144 +16,526 @@ import {
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { scanContent } from "../api/scan";
-import { colors } from "../constants/theme";
+import { useResolvedThemeMode, useTheme } from "../hooks/useTheme";
+import { ThemeColors } from "../constants/theme";
 import { useAppStore } from "../store/appStore";
+import { usePersonalizationStore } from "../store/personalizationStore";
 import { RootStackParamList } from "../navigation/types";
+import AppLogo from "../../assets/AISlopGuard-logo.svg";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Home">;
+const BLOCKED_ACCENT = "#FFB000";
 
 export function HomeScreen({ navigation }: Props) {
   const [url, setUrl] = useState("");
+  const [showScanHint, setShowScanHint] = useState(false);
+  const resolvedThemeMode = useResolvedThemeMode();
+  const colors = useTheme();
+  const styles = makeStyles(colors);
   const userFingerprint = useAppStore((state) => state.userFingerprint);
   const conservativeMode = useAppStore((state) => state.conservativeMode);
   const setConservativeMode = useAppStore((state) => state.setConservativeMode);
+  const setThemeMode = useAppStore((state) => state.setThemeMode);
+  const applyPersonalization = usePersonalizationStore((state) => state.applyPersonalization);
+  const captureScanContext = usePersonalizationStore((state) => state.captureScanContext);
 
   const scanMutation = useMutation({
     mutationFn: scanContent,
-    onSuccess: (result) => navigation.navigate("Result", { result }),
+    onSuccess: (result, variables) => {
+      const personalizedResult = applyPersonalization(result, variables.conservativeMode);
+      captureScanContext(personalizedResult, variables.url);
+      navigation.navigate("Result", { result: personalizedResult, contentUrl: variables.url });
+    },
   });
 
+  useFocusEffect(
+    useCallback(() => {
+      setUrl("");
+      setShowScanHint(false);
+      scanMutation.reset();
+    }, [])
+  );
+
+  const trimmedUrl = url.trim();
+  const canScan = !!trimmedUrl && !scanMutation.isPending;
+
+  const handlePasteFromClipboard = async () => {
+    const clipboardText = await Clipboard.getStringAsync();
+    if (!clipboardText.trim()) {
+      return;
+    }
+    setUrl(clipboardText.trim());
+    setShowScanHint(false);
+  };
+
+  const handleToggleTheme = () => {
+    setThemeMode(resolvedThemeMode === "dark" ? "light" : "dark");
+  };
+
+  const handleUrlChange = (value: string) => {
+    setUrl(value);
+    if (value.trim()) {
+      setShowScanHint(false);
+    }
+  };
+
+  const handleScanPress = () => {
+    if (!url.trim()) {
+      setShowScanHint(true);
+      return;
+    }
+    if (scanMutation.isPending) {
+      return;
+    }
+    setShowScanHint(false);
+    scanMutation.mutate({ url, userFingerprint, conservativeMode });
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Scan a Reel, Short, Image, or Video Link</Text>
-      <Text style={styles.subtitle}>
-        Paste a URL from YouTube, Instagram, TikTok, or a direct image/video link.
-      </Text>
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <View style={styles.container}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.themeToggleButton,
+            pressed && styles.buttonPressed,
+          ]}
+          android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: true }}
+          onPress={handleToggleTheme}
+          accessibilityRole="button"
+          accessibilityLabel={
+            resolvedThemeMode === "dark"
+              ? "Switch to light mode"
+              : "Switch to dark mode"
+          }
+          accessibilityHint="Changes app appearance between light and dark themes"
+        >
+          <Ionicons
+            name={resolvedThemeMode === "dark" ? "sunny-outline" : "moon-outline"}
+            size={18}
+            color={colors.text}
+          />
+        </Pressable>
 
-      <TextInput
-        value={url}
-        onChangeText={setUrl}
-        placeholder="https://youtube.com/shorts/..."
-        placeholderTextColor="#64748b"
-        style={styles.input}
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
+        {/* Brand */}
+        <View style={styles.brand}>
+          <AppLogo
+            width={199}
+            height={72}
+            style={styles.logoSvg}
+            accessible
+            accessibilityRole="image"
+            accessibilityLabel="AISlopGuard logo"
+          />
+          <Text style={styles.tagline}>
+            Detect AI-generated videos and images{"\n"}from any social media link.
+          </Text>
+        </View>
 
-      <View style={styles.switchRow}>
-        <Text style={styles.switchLabel}>Conservative mode (fewer false positives)</Text>
-        <Switch
-          value={conservativeMode}
-          onValueChange={setConservativeMode}
-          thumbColor={conservativeMode ? colors.primary : "#94a3b8"}
-        />
+        {/* Form */}
+        <View style={styles.form}>
+          <TextInput
+            value={url}
+            onChangeText={handleUrlChange}
+            placeholder="Paste a YouTube, Instagram or TikTok link..."
+            placeholderTextColor={colors.placeholder}
+            accessibilityLabel="Content URL input"
+            accessibilityHint="Paste a YouTube, Instagram, or TikTok link to scan"
+            style={styles.input}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="url"
+            multiline={false}
+          />
+
+          {/* Paste from clipboard button */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.pasteButton,
+              pressed && styles.buttonPressed,
+            ]}
+            android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
+            onPress={handlePasteFromClipboard}
+            accessibilityRole="button"
+            accessibilityLabel="Paste from clipboard"
+            accessibilityHint="Pastes text from your clipboard into the URL input"
+          >
+            <Text style={styles.pasteButtonText}>Paste from Clipboard</Text>
+          </Pressable>
+
+          <View style={styles.switchRow}>
+            <View>
+              <Text style={styles.switchLabel}>Conservative mode</Text>
+              <Text style={styles.switchCaption}>Fewer false positives</Text>
+            </View>
+            <Switch
+              value={conservativeMode}
+              onValueChange={setConservativeMode}
+              accessibilityLabel="Conservative mode"
+              accessibilityHint="When enabled, reduces false positives"
+              thumbColor="#fff"
+              trackColor={{ false: colors.panelBorder, true: colors.primary }}
+            />
+          </View>
+
+          {scanMutation.isError ? (
+            <Text style={styles.errorText}>
+              {(scanMutation.error as Error).message}
+            </Text>
+          ) : null}
+
+          
+        </View>
+
+        {/* Actions */}
+        <View style={styles.actions}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.scanButton,
+              pressed && styles.buttonPressed,
+            ]}
+            android_ripple={{ color: "rgba(255,255,255,0.15)", borderless: false }}
+            onPress={handleScanPress}
+            disabled={!canScan}
+            accessibilityRole="button"
+            accessibilityLabel="Scan content"
+            accessibilityHint="Runs AI-content detection for the pasted link"
+            accessibilityState={{ disabled: !canScan, busy: scanMutation.isPending }}
+          >
+            <View
+              style={[
+                styles.scanButtonFace,
+                canScan ? styles.scanButtonFaceEnabled : styles.scanButtonFaceDisabled,
+              ]}
+            >
+              <View style={styles.scanButtonContent}>
+                {scanMutation.isPending ? (
+                  <ActivityIndicator
+                    color={canScan ? colors.primary : colors.subtext}
+                    size="small"
+                  />
+                ) : (
+                  <>
+                    <Ionicons
+                      name="sparkles-outline"
+                      size={16}
+                      color={canScan ? colors.primary : colors.subtext}
+                      style={styles.secondaryIcon}
+                    />
+                    <Text
+                      style={[
+                        styles.scanButtonText,
+                        canScan ? styles.scanButtonTextEnabled : styles.scanButtonTextDisabled,
+                      ]}
+                    >
+                      Scan Content
+                    </Text>
+                  </>
+                )}
+              </View>
+            </View>
+          </Pressable>
+          {showScanHint ? (
+            <View style={styles.scanHintRow}>
+              <Ionicons
+                name="information-circle-outline"
+                size={14}
+                color={colors.subtext}
+                style={styles.scanHintIcon}
+              />
+              <Text style={styles.scanHintText}>Paste a link above to enable scanning.</Text>
+            </View>
+          ) : null}
+
+          <View style={styles.secondaryStack}>
+            <View style={styles.secondaryRow}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.secondaryButton,
+                  pressed && styles.buttonPressed,
+                ]}
+                android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
+                onPress={() => navigation.navigate("History")}
+                accessibilityRole="button"
+                accessibilityLabel="View scan history"
+                accessibilityHint="Opens your previous scans"
+              >
+                <View style={[styles.secondaryButtonFace, styles.historyButton]}>
+                  <View style={styles.secondaryButtonContent}>
+                    <Ionicons
+                      name="time-outline"
+                      size={16}
+                      color={colors.primary}
+                      style={styles.secondaryIcon}
+                    />
+                    <Text style={[styles.secondaryButtonText, styles.historyButtonText]}>
+                      History
+                    </Text>
+                  </View>
+                </View>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.secondaryButton,
+                  pressed && styles.buttonPressed,
+                ]}
+                android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
+                onPress={() => navigation.navigate("Blacklist")}
+                accessibilityRole="button"
+                accessibilityLabel="View blocked creators"
+                accessibilityHint="Opens your blocked creators list"
+              >
+                <View style={[styles.secondaryButtonFace, styles.blockedButton]}>
+                  <View style={styles.secondaryButtonContent}>
+                    <Ionicons
+                      name="shield-outline"
+                      size={16}
+                      color={BLOCKED_ACCENT}
+                      style={styles.secondaryIcon}
+                    />
+                    <Text style={[styles.secondaryButtonText, styles.blockedButtonText]}>
+                      Blocked
+                    </Text>
+                  </View>
+                </View>
+              </Pressable>
+            </View>
+            <Pressable
+              style={({ pressed }) => [
+                styles.secondaryButton,
+                pressed && styles.buttonPressed,
+              ]}
+              android_ripple={{ color: "rgba(255,255,255,0.08)", borderless: false }}
+              onPress={() => navigation.navigate("CreatorBiases")}
+              accessibilityRole="button"
+              accessibilityLabel="View creator bias settings"
+              accessibilityHint="Opens creator-specific personalization"
+            >
+              <View style={[styles.secondaryButtonFace, styles.creatorBiasesButton]}>
+                <View style={styles.secondaryButtonContent}>
+                  <Ionicons
+                    name="git-network-outline"
+                    size={16}
+                    color={colors.primary}
+                    style={styles.secondaryIcon}
+                  />
+                  <Text style={[styles.secondaryButtonText, styles.creatorBiasesButtonText]}>
+                    Creator Biases
+                  </Text>
+                </View>
+              </View>
+            </Pressable>
+          </View>
+        </View>
+
       </View>
-
-      <Pressable
-        style={[styles.button, scanMutation.isPending && styles.buttonDisabled]}
-        onPress={() => scanMutation.mutate({ url, userFingerprint, conservativeMode })}
-        disabled={scanMutation.isPending || !url.trim()}
-      >
-        {scanMutation.isPending ? (
-          <ActivityIndicator color="#0f172a" />
-        ) : (
-          <Text style={styles.buttonText}>Scan Content</Text>
-        )}
-      </Pressable>
-
-      {scanMutation.isError ? (
-        <Text style={styles.errorText}>
-          Scan failed: {(scanMutation.error as Error).message}
-        </Text>
-      ) : null}
-
-      <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate("History")}>
-        <Text style={styles.secondaryButtonText}>Open History</Text>
-      </Pressable>
-
-      <Text style={styles.footer}>User ID: {userFingerprint}</Text>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: colors.bg,
-    gap: 12,
-  },
-  title: {
-    color: colors.text,
-    fontSize: 22,
-    fontWeight: "700",
-  },
-  subtitle: {
-    color: colors.subtext,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  input: {
-    borderColor: "#334155",
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    color: colors.text,
-    backgroundColor: "#0b1220",
-  },
-  switchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  switchLabel: {
-    color: colors.text,
-    fontSize: 14,
-    flex: 1,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: "#0f172a",
-    fontWeight: "700",
-    fontSize: 16,
-  },
-  secondaryButton: {
-    borderColor: "#334155",
-    borderWidth: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  secondaryButtonText: {
-    color: colors.text,
-    fontWeight: "600",
-  },
-  errorText: {
-    color: colors.danger,
-  },
-  footer: {
-    marginTop: "auto",
-    color: "#64748b",
-    fontSize: 12,
-  },
-});
+function makeStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    container: {
+      flex: 1,
+      paddingHorizontal: 24,
+      paddingTop: 90,
+      paddingBottom: 36,
+      gap: 28,
+    },
+    brand: {
+      gap: 10,
+      paddingBottom: 4,
+      alignItems: "center",
+    },
+    logoSvg: {
+      marginBottom: 4,
+      alignSelf: "center",
+    },
+    themeToggleButton: {
+      position: "absolute",
+      top: 45,
+      right: 15,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.panelBorder,
+      backgroundColor: colors.panel,
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 10,
+    },
+    tagline: {
+      color: colors.subtext,
+      fontSize: 15,
+      lineHeight: 22,
+      textAlign: "center",
+    },
+    form: {
+      gap: 12,
+    },
+    input: {
+      backgroundColor: colors.panel,
+      borderWidth: 1,
+      borderColor: colors.panelBorder,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 15,
+      color: colors.text,
+      fontSize: 15,
+    },
+    switchRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 4,
+      paddingVertical: 4,
+    },
+    switchLabel: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: "500",
+    },
+    switchCaption: {
+      color: colors.subtext,
+      fontSize: 12,
+      marginTop: 2,
+    },
+    errorText: {
+      color: colors.danger,
+      fontSize: 13,
+      paddingHorizontal: 2,
+    },
+    pasteButton: {
+      backgroundColor: colors.panel,
+      borderWidth: 1,
+      borderColor: colors.panelBorder,
+      paddingVertical: 12,
+      borderRadius: 12,
+      alignItems: "center",
+    },
+    pasteButtonText: {
+      color: colors.text,
+      fontWeight: "500",
+      fontSize: 14,
+    },
+    actions: {
+      gap: 10,
+      // marginTop: "auto",
+    },
+    scanButton: {
+      alignItems: "stretch",
+      justifyContent: "center",
+    },
+    scanButtonFace: {
+      borderWidth: 1,
+      borderColor: colors.panelBorder,
+      borderRadius: 6,
+      alignItems: "center",
+      justifyContent: "center",
+      transform: [{ skewX: "-16deg" }],
+    },
+    scanButtonContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 16,
+      paddingHorizontal: 16,
+      transform: [{ skewX: "16deg" }],
+    },
+    scanButtonFaceEnabled: {
+      borderColor: colors.primary + "66",
+      backgroundColor: colors.primaryDim,
+    },
+    scanButtonFaceDisabled: {
+      backgroundColor: colors.panel,
+    },
+    scanButtonTextEnabled: {
+      color: colors.primary,
+    },
+    scanButtonTextDisabled: {
+      color: colors.subtext,
+    },
+    scanButtonText: {
+      fontWeight: "600",
+      fontSize: 15,
+      letterSpacing: 0.1,
+    },
+    scanHintRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      alignSelf: "center",
+      marginTop: 2,
+    },
+    scanHintIcon: {
+      marginRight: 4,
+    },
+    scanHintText: {
+      color: colors.subtext,
+      fontSize: 12,
+    },
+    secondaryRow: {
+      flexDirection: "row",
+      gap: 10,
+    },
+    secondaryStack: {
+      gap: 10,
+    },
+    secondaryButton: {
+      flex: 1,
+    },
+    secondaryButtonFace: {
+      backgroundColor: colors.panel,
+      borderWidth: 1,
+      borderColor: colors.panelBorder,
+      paddingVertical: 14,
+      borderRadius: 6,
+      alignItems: "center",
+      transform: [{ skewX: "-12deg" }],
+    },
+    secondaryButtonContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 12,
+      transform: [{ skewX: "12deg" }],
+    },
+    secondaryIcon: {
+      marginRight: 6,
+    },
+    historyButton: {
+      borderColor: colors.primary + "66",
+      backgroundColor: colors.primaryDim,
+    },
+    creatorBiasesButton: {
+      borderColor: colors.primary + "66",
+      backgroundColor: colors.primaryDim,
+    },
+    blockedButton: {
+      borderColor: BLOCKED_ACCENT + "66",
+      backgroundColor: "rgba(255,176,0,0.10)",
+    },
+    secondaryButtonText: {
+      color: colors.subtext,
+      fontWeight: "500",
+      fontSize: 14,
+    },
+    historyButtonText: {
+      color: colors.primary,
+    },
+    creatorBiasesButtonText: {
+      color: colors.primary,
+    },
+    blockedButtonText: {
+      color: BLOCKED_ACCENT,
+    },
+    buttonPressed: {
+      opacity: 0.72,
+      transform: [{ scale: 0.977 }],
+    },
+  });
+}

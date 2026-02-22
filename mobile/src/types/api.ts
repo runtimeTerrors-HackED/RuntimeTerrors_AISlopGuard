@@ -18,12 +18,15 @@ export type ScanResponse = {
   platform: string;
   canonicalId: string;
   creatorId: string;
+  creatorName?: string | null;
+  contentUrl?: string | null;
   verdict: Verdict;
   finalScore: number;
   confidenceBand: ConfidenceBand;
   platformScore: number;
   communityScore: number;
   modelScore: number;
+  rawModelScore?: number;
   evidence: EvidenceItem[];
   scannedAt: string;
 };
@@ -47,4 +50,9 @@ export type UpdateListRequest = {
 
 export type UpdateListResponse = {
   ok: boolean;
+};
+
+export type CreatorListEntry = {
+  creatorId: string;
+  listType: "allow" | "block";
 };

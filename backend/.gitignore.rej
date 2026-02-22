@@ -1,0 +1,9 @@
+diff a/backend/.gitignore b/backend/.gitignore	(rejected hunks)
+@@ -2,3 +2,6 @@
+ __pycache__/
+ *.pyc
+ .env
++*.mp4
++*.webm
++.idea/
+\ No newline at end of file

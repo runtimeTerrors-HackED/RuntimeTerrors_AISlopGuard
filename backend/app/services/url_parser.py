@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 from hashlib import sha1
 from urllib.parse import parse_qs, urlparse
+import requests
+
+from app.core.config import settings
 
 
 @dataclass
@@ -41,10 +44,33 @@ def parse_content(url: str) -> ParsedContent:
 
     if "youtube.com" in host or "youtu.be" in host:
         video_id = _youtube_id(url) or sha1(url.encode("utf-8")).hexdigest()[:16]
+        channelId = "undefined"
+        if settings.youtube_api_key:
+            try:
+                api_get = requests.get(
+                    "https://www.googleapis.com/youtube/v3/videos",
+                    params={
+                        "part": "snippet",
+                        "id": video_id,
+                        "key": settings.youtube_api_key,
+                    },
+                    timeout=5,
+                )
+                api_get.raise_for_status()
+                api_json = api_get.json()
+                for item in api_json.get("items", []):
+                    snippet = item.get("snippet", {})
+                    candidate = snippet.get("channelId")
+                    if candidate:
+                        channelId = candidate
+                        break
+            except Exception:
+                # Keep parsing resilient even if YouTube API lookup fails.
+                channelId = "undefined"
         return ParsedContent(
             platform="youtube",
             canonical_id=video_id,
-            creator_id=f"youtube_creator_{video_id[:8]}",
+            creator_id=f"youtube_creator_{channelId}",
             normalized_url=url,
         )
 

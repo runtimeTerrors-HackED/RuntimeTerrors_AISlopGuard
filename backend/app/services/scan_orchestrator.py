@@ -8,7 +8,6 @@ from app.services.platform_signals import get_platform_signal
 from app.services.scoring import calculate_final_score, decide_verdict
 from app.services.url_parser import parse_content
 
-
 def run_scan(url: str, user_fingerprint: str, conservative_mode: bool = True) -> ScanResponse:
     parsed = parse_content(url)
     user_list_value = store.get_creator_list_value(user_fingerprint, parsed.creator_id)
@@ -21,6 +20,7 @@ def run_scan(url: str, user_fingerprint: str, conservative_mode: bool = True) ->
             platform=parsed.platform,
             canonicalId=parsed.canonical_id,
             creatorId=parsed.creator_id,
+            contentUrl=parsed.normalized_url,
             verdict="likely_human",
             finalScore=0.0,
             confidenceBand="high",
@@ -45,6 +45,7 @@ def run_scan(url: str, user_fingerprint: str, conservative_mode: bool = True) ->
             platform=parsed.platform,
             canonicalId=parsed.canonical_id,
             creatorId=parsed.creator_id,
+            contentUrl=parsed.normalized_url,
             verdict="likely_ai",
             finalScore=1.0,
             confidenceBand="high",
@@ -105,13 +106,21 @@ def run_scan(url: str, user_fingerprint: str, conservative_mode: bool = True) ->
         community_score=community_signal.score,
         model_score=model_signal.score,
     )
-    verdict, confidence_band = decide_verdict(final_score, conservative_mode=conservative_mode)
+    platform_unavailable = platform_signal.score == 0.5 and platform_signal.strength == "low"
+    no_community_votes = not community_signal.has_votes
+    low_signal_mode = platform_unavailable and no_community_votes
+    verdict, confidence_band = decide_verdict(
+        final_score,
+        conservative_mode=conservative_mode,
+        low_signal_mode=low_signal_mode,
+    )
 
     response = ScanResponse(
         contentId=parsed.content_id,
         platform=parsed.platform,
         canonicalId=parsed.canonical_id,
         creatorId=parsed.creator_id,
+        contentUrl=parsed.normalized_url,
         verdict=verdict,
         finalScore=final_score,
         confidenceBand=confidence_band,
