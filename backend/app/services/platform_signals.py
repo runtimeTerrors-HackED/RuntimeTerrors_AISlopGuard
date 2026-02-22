@@ -16,6 +16,21 @@ class PlatformSignal:
     strength: SignalStrength
 
 
+
+def _channel_id_to_handle(channel_id, api_key):
+    r = requests.get(
+        "https://www.googleapis.com/youtube/v3/channels",
+        params={
+            "part": "snippet",
+            "id": channel_id,
+            "key": api_key
+        }
+    )
+    data = r.json()
+    if not data.get("items"):
+        return None
+    return data["items"][0]["snippet"].get("customUrl")
+
 def _youtube_synthetic_signal(video_id: str) -> PlatformSignal:
     if not settings.youtube_api_key:
         return PlatformSignal(
@@ -25,7 +40,7 @@ def _youtube_synthetic_signal(video_id: str) -> PlatformSignal:
         )
 
     endpoint = "https://www.googleapis.com/youtube/v3/videos"
-    params = {"part": "status", "id": video_id, "key": settings.youtube_api_key}
+    params = {"part": "status,snippet", "id": video_id, "key": settings.youtube_api_key}
 
     try:
         response = requests.get(endpoint, params=params, timeout=5)
@@ -44,6 +59,30 @@ def _youtube_synthetic_signal(video_id: str) -> PlatformSignal:
             score=0.5,
             message="No YouTube metadata found for this content.",
             strength="low",
+        )
+
+    snip = items[0].get("snippet", {})
+    channelId = snip['channelId']
+    handle = _channel_id_to_handle(channelId, settings.youtube_api_key)
+
+    blocklist = requests.get("https://raw.githubusercontent.com/Override92/AiSList/refs/heads/main/AiSList/aislist_blocklist.txt")
+    blocklist_parser = [i.lower() for i in blocklist.text.splitlines()]
+
+    if handle in blocklist_parser:
+        return PlatformSignal(
+            score=1.0,
+            message="Channel is in public blocklist.",
+            strength="high",
+        )
+
+    warnlist = requests.get("https://raw.githubusercontent.com/Override92/AiSList/refs/heads/main/AiSList/aislist_warnlist.txt")
+    warnlist_parser = [i.lower() for i in warnlist.text.splitlines()]
+
+    if handle in warnlist_parser:
+        return PlatformSignal(
+            score=0.5,
+            message="Channel is in public warnlist.",
+            strength="high",
         )
 
     status = items[0].get("status", {})
