@@ -72,7 +72,7 @@ export function ScanResultCard({ result }: Props) {
         </View>
       ) : (
         <>
-          <VerdictPill verdict={result.verdict} colors={colors} />
+          <VerdictPill verdict={result.verdict} final_score={result.finalScore} colors={colors} />
           <View style={styles.statsRow}>
             <View style={styles.stat}>
               <Text style={styles.statValue}>{(result.finalScore * 100).toFixed(0)}%</Text>
