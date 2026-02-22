@@ -8,9 +8,9 @@ type Props = {
   result: ScanResponse;
 };
 
-function VerdictPill({ verdict, colors }: { verdict: ScanResponse["verdict"]; colors: ThemeColors }) {
-  const color = verdictColor(verdict, colors);
-  const label = verdictLabel(verdict);
+function VerdictPill({ verdict, final_score, colors }: { verdict: ScanResponse["verdict"]; final_score: number; colors: ThemeColors }) {
+  const color = verdictColor(verdict, colors, final_score);
+  const label = verdictLabel(verdict, final_score);
   return (
     <View style={[pillStyles.pill, { backgroundColor: color + "18", borderColor: color + "30" }]}>
       <View style={[pillStyles.dot, { backgroundColor: color }]} />
@@ -72,7 +72,7 @@ export function ScanResultCard({ result }: Props) {
         </View>
       ) : (
         <>
-          <VerdictPill verdict={result.verdict} colors={colors} />
+          <VerdictPill verdict={result.verdict} final_score={result.finalScore} colors={colors} />
           <View style={styles.statsRow}>
             <View style={styles.stat}>
               <Text style={styles.statValue}>{(result.finalScore * 100).toFixed(0)}%</Text>
