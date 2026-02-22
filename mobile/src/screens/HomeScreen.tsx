@@ -313,7 +313,19 @@ export function HomeScreen({ navigation }: Props) {
               accessibilityLabel="View creator bias settings"
               accessibilityHint="Opens creator-specific personalization"
             >
-              <Text style={styles.secondaryButtonText}>Creator Biases</Text>
+              <View style={[styles.secondaryButtonFace, styles.creatorBiasesButton]}>
+                <View style={styles.secondaryButtonContent}>
+                  <Ionicons
+                    name="git-network-outline"
+                    size={16}
+                    color={colors.primary}
+                    style={styles.secondaryIcon}
+                  />
+                  <Text style={[styles.secondaryButtonText, styles.creatorBiasesButtonText]}>
+                    Creator Biases
+                  </Text>
+                </View>
+              </View>
             </Pressable>
           </View>
         </View>
@@ -499,6 +511,10 @@ function makeStyles(colors: ThemeColors) {
       borderColor: colors.primary + "66",
       backgroundColor: colors.primaryDim,
     },
+    creatorBiasesButton: {
+      borderColor: colors.primary + "66",
+      backgroundColor: colors.primaryDim,
+    },
     blockedButton: {
       borderColor: BLOCKED_ACCENT + "66",
       backgroundColor: "rgba(255,176,0,0.10)",
@@ -509,6 +525,9 @@ function makeStyles(colors: ThemeColors) {
       fontSize: 14,
     },
     historyButtonText: {
+      color: colors.primary,
+    },
+    creatorBiasesButtonText: {
       color: colors.primary,
     },
     blockedButtonText: {
