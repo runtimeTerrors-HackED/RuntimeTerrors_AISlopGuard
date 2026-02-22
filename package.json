@@ -1,0 +1,17 @@
+{
+  "name": "aislopguard-root",
+  "private": true,
+  "scripts": {
+    "init": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"if (!(Test-Path 'backend/.venv')) { py -m venv backend/.venv }; if (!(Test-Path 'backend/.env')) { Copy-Item 'backend/.env.example' 'backend/.env' }\"",
+    "install:backend": "backend/.venv/Scripts/python -m pip install -r backend/requirements.txt",
+    "install:mobile": "npm --prefix mobile install",
+    "install:all": "npm run install:backend && npm run install:mobile",
+    "dev:api": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"Set-Location backend; ./.venv/Scripts/Activate.ps1; uvicorn main:app --reload --host 0.0.0.0 --port 8000\"",
+    "dev:model": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"Set-Location backend; ./.venv/Scripts/Activate.ps1; uvicorn model_service.main:app --reload --host 0.0.0.0 --port 8010\"",
+    "dev:mobile": "npm --prefix mobile run start",
+    "dev": "concurrently -n API,MODEL,MOBILE -c blue,magenta,green \"npm run dev:api\" \"npm run dev:model\" \"npm run dev:mobile\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
