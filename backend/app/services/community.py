@@ -106,10 +106,11 @@ def get_community_signal(content_id: str) -> CommunitySignal:
         )
 
     score = (ai_weight + 0.5 * unsure_weight) / total
+    print(score)
     if inBlockList:
-        score += 3
+        score += 0.35
     elif inWarnList:
-        score += 1.5
+        score += 0.1
     strength = "high" if total >= 10 else "medium" if total >= 4 else "low"
 
     if inBlockList:
